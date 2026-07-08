@@ -57,12 +57,13 @@ describe("ProductListPage", () => {
         return new HttpResponse(null, { status: 204 });
       }),
     );
-    vi.spyOn(window, "confirm").mockReturnValue(true);
-
     renderWithProviders(<App />, { route: "/products" });
 
     expect(await screen.findByText("Widget")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+    const dialog = await screen.findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Delete product" }));
 
     await waitFor(() => expect(screen.queryByText("Widget")).not.toBeInTheDocument());
     expect(await screen.findByText("No products yet.")).toBeInTheDocument();
