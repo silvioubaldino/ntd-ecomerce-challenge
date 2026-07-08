@@ -1,9 +1,9 @@
 ---
 id: SPEC-NNN
 type: spec
-status: draft          # draft → done
+status: draft              # draft → done
 updated: 2026-07-08
-parents: [AYD-NNN]     # obrigatório: o AYD que originou esta spec
+parents: [AYD-NNN@context]  # obrigatório: o AYD que originou esta spec
 related: [GLO]
 ---
 
@@ -32,9 +32,7 @@ _2–4 linhas: a estratégia técnica. Só o essencial._
 3.
 
 ## Arquivos afetados
-- `api/…`
-- `web/…`
-- `context/…` (tipos compartilhados, se houver)
+- `ntd-ecomerce-web/…`
 
 ## Testes
 - **Aceite:** um teste por cenário Gherkin acima.

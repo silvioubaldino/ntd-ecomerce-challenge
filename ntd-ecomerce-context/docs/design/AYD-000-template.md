@@ -4,7 +4,7 @@ type: design
 status: draft
 updated: 2026-07-08
 parents: [REQ-01]
-children: []          # SPEC gerada, ex.: [SPEC-001]
+children: []          # SPEC gerada, ex.: [SPEC-001@api, SPEC-001@web]
 related: [GLO]
 ---
 
@@ -18,10 +18,10 @@ related: [GLO]
 _Que requisito (REQ) esta feature atende e qual o resultado esperado._
 
 ## Partes afetadas
-| Parte | Papel nesta feature |
-|-------|---------------------|
-| api | _expõe/serve…_ |
-| web | _consome/exibe…_ |
+| Parte | Papel nesta feature | SPEC gerada |
+|-------|---------------------|-------------|
+| api | _expõe/serve…_ | SPEC-NNN@api |
+| web | _consome/exibe…_ | SPEC-NNN@web |
 
 ## Contrato (fonte da verdade)
 _Endpoints, payloads, erros. Campos/enums em inglês (usar termos do GLO)._

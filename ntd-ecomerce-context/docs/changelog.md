@@ -1,14 +1,16 @@
 ---
-id: CHANGELOG
+id: CHANGELOG-context
 type: changelog
-title: Changelog
+title: Changelog — context
 status: approved
 updated: 2026-07-08
 ---
 
-# Changelog
+# Changelog — context
 
-All notable changes to this project are documented here.
+Mudanças na doc **compartilhada** (requisitos, glossário, arquitetura, design/AYD,
+convenções). Mudanças de implementação de cada serviço ficam no changelog local dele
+(`ntd-ecomerce-api/docs/changelog.md`, `ntd-ecomerce-web/docs/changelog.md`).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -23,4 +25,4 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-- Docs framework initialized (requirements+glossary, architecture, conventions, design/AYD, specs/SPEC).
+- Docs framework restructured into per-part folders (`ntd-ecomerce-context`, `ntd-ecomerce-api`, `ntd-ecomerce-web`).
