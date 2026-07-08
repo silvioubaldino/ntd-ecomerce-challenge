@@ -35,7 +35,6 @@ type ImportReport struct {
 
 func ValidateCSVHeader(header []string) error {
 	if len(header) != len(csvImportColumns) {
-		1
 		return ErrInvalidCSVHeader
 	}
 	for i, column := range csvImportColumns {
@@ -46,9 +45,6 @@ func ValidateCSVHeader(header []string) error {
 	return nil
 }
 
-// ParseProductCSVRecord turns one CSV data row into a ProductInput, returning a
-// field->reason map of every problem found (per RN-02) instead of a single error,
-// so a row with several bad fields is reported in one pass.
 func ParseProductCSVRecord(record []string) (ProductInput, map[string]string) {
 	record = padRecord(record, len(csvImportColumns))
 	problems := map[string]string{}
@@ -122,9 +118,6 @@ func firstUnsafeField(name, description, category string) string {
 	return ""
 }
 
-// isUnsafeText flags an HTML/script tag or a leading CSV formula-injection
-// character (RN-02 "unsafe content"). Plain SQL-injection-looking text is not
-// flagged here — it's neutralized by parameterized queries and stored as-is.
 func isUnsafeText(s string) bool {
 	if strings.ContainsAny(s, "<>") {
 		return true
