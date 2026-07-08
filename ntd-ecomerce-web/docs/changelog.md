@@ -19,7 +19,7 @@ CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
-- Redesigned the catalog UI with a cohesive visual identity: branded shell, refined list and forms, and polished empty/loading/error/confirmation states.
+- Redesigned the catalog UI. [#07](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/7)
 - Implemented SPEC-001 (Product catalog CRUD UI: list, create, edit, delete); service now runs via Docker. [#06](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/6)
 - Added SPEC-001@web (Product catalog CRUD UI) and its supporting technical decisions. [#05](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/5)
 - Service scaffold initialized (specs, technical_decisions).
