@@ -28,6 +28,7 @@ no implementation detail; reference the PR when useful.
 
 ## Unreleased
 
+- Created AYD-001 (Product catalog CRUD): first api↔web contract, Product model, and base REST conventions. [#02](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/2)
 - Filled REQ-01 (functional/non-functional requirements, business rules, MVP scope) and added the SKU term to the glossary. [#01](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/1) 
 - Docs framework restructured into per-part folders (`ntd-ecomerce-context`, `ntd-ecomerce-api`, `ntd-ecomerce-web`).
 
