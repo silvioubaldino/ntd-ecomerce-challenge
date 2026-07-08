@@ -18,10 +18,19 @@ export function makeProduct(overrides: Partial<Product> = {}): Product {
 }
 
 export const handlers = [
-  http.get("/api/products", () => {
+  http.get("/api/products", ({ request }) => {
+    const url = new URL(request.url);
+    const q = url.searchParams.get("q");
+    const page = Number(url.searchParams.get("page") ?? "1");
+    if (q) {
+      return HttpResponse.json({
+        data: [makeProduct({ name: `${q} match` })],
+        pagination: { page, page_size: 20, total: 1 },
+      });
+    }
     return HttpResponse.json({
       data: [makeProduct()],
-      pagination: { page: 1, page_size: 20, total: 1 },
+      pagination: { page, page_size: 20, total: 1 },
     });
   }),
 
