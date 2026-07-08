@@ -13,7 +13,6 @@ const (
 	maxCategoryLength = 100
 )
 
-// Product is the catalog resource, per AYD-001@context.
 type Product struct {
 	ID          uuid.UUID       `json:"id"`
 	Name        string          `json:"name"`
@@ -27,14 +26,11 @@ type Product struct {
 	UpdatedAt   time.Time       `json:"updated_at"`
 }
 
-// ProductList is the paginated list response shape for GET /products.
 type ProductList struct {
 	Data       []Product  `json:"data"`
 	Pagination Pagination `json:"pagination"`
 }
 
-// ProductInput is Product minus the server-generated fields (id, created_at,
-// updated_at) — the payload for POST/PUT.
 type ProductInput struct {
 	Name        string          `json:"name"`
 	SKU         string          `json:"sku"`
@@ -45,9 +41,6 @@ type ProductInput struct {
 	WeightKg    decimal.Decimal `json:"weight_kg"`
 }
 
-// Validate returns a map of field -> problem code for every invalid field, or an
-// empty map when the input is valid. Codes feed the AYD-001 validation_error
-// envelope's `details`.
 func (in ProductInput) Validate() map[string]string {
 	problems := map[string]string{}
 
@@ -87,8 +80,6 @@ func (in ProductInput) Validate() map[string]string {
 	return problems
 }
 
-// ToProduct builds a Product from the input. ID and timestamps are left zero —
-// the repository is responsible for generating/stamping them.
 func (in ProductInput) ToProduct() Product {
 	return Product{
 		Name:        in.Name,

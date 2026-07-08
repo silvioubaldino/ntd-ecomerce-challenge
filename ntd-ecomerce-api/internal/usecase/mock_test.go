@@ -13,7 +13,6 @@ type MockProductRepository struct {
 	mock.Mock
 }
 
-// ctx is ignored in m.Called.
 func (m *MockProductRepository) Add(_ context.Context, product domain.Product) (domain.Product, error) {
 	args := m.Called(product)
 	return args.Get(0).(domain.Product), args.Error(1)

@@ -16,8 +16,6 @@ import (
 
 const uniqueViolationCode = "23505"
 
-// productModel is the GORM row for the products table. It never leaves this
-// package — domain.Product is the only shape other layers see.
 type productModel struct {
 	ID          uuid.UUID       `gorm:"column:id;type:uuid;default:gen_random_uuid();primaryKey"`
 	Name        string          `gorm:"column:name"`
@@ -167,8 +165,6 @@ func (r *ProductRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// translateWriteErr maps a unique-constraint violation on sku to a domain
-// conflict; every other error bubbles up wrapped with context.
 func translateWriteErr(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == uniqueViolationCode {

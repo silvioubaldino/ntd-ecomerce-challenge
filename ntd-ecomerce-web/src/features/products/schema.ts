@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// Mirrors AYD-001@context's ProductInput. Decimals stay strings end to end —
-// validated by shape/sign here, never parsed to number.
 const decimalString = z
   .string()
   .min(1, "required")

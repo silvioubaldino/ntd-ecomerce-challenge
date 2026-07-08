@@ -19,9 +19,7 @@ func TestPage_Validate(t *testing.T) {
 	)
 
 	tests := map[string]struct {
-		// input
 		input input
-		// expected
 		expected expected
 	}{
 		"should accept the default page": {
@@ -48,13 +46,10 @@ func TestPage_Validate(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			page := tc.input.page
 
-			// Act
 			err := page.Validate()
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 		})
 	}
@@ -71,9 +66,7 @@ func TestPage_Offset(t *testing.T) {
 	)
 
 	tests := map[string]struct {
-		// input
 		input input
-		// expected
 		expected expected
 	}{
 		"should return 0 for the first page": {
@@ -88,13 +81,10 @@ func TestPage_Offset(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			page := tc.input.page
 
-			// Act
 			offset := page.Offset()
 
-			// Assert
 			assert.Equal(t, tc.expected.offset, offset)
 		})
 	}

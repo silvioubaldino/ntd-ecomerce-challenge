@@ -63,11 +63,8 @@ func TestProductHandler_Add(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// input
 		body []byte
-		// mocks
 		mockSetup func(mockUsecase *MockProductUsecase)
-		// expected
 		expected expected
 	}{
 		"should respond 201 with string decimals when product is created": {
@@ -114,7 +111,6 @@ func TestProductHandler_Add(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockUsecase = &MockProductUsecase{}
 				engine      = newTestEngine(mockUsecase)
@@ -126,10 +122,8 @@ func TestProductHandler_Add(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 
-			// Act
 			engine.ServeHTTP(rec, req)
 
-			// Assert
 			assert.Equal(t, tc.expected.status, rec.Code)
 			if tc.expected.code != "" {
 				var envelope testErrorEnvelope
@@ -154,11 +148,8 @@ func TestProductHandler_FindAll(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// input
 		query string
-		// mocks
 		mockSetup func(mockUsecase *MockProductUsecase)
-		// expected
 		expected expected
 	}{
 		"should default to page 1 size 20 when no query params are given": {
@@ -189,7 +180,6 @@ func TestProductHandler_FindAll(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockUsecase = &MockProductUsecase{}
 				engine      = newTestEngine(mockUsecase)
@@ -200,10 +190,8 @@ func TestProductHandler_FindAll(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/products"+tc.query, nil)
 			rec := httptest.NewRecorder()
 
-			// Act
 			engine.ServeHTTP(rec, req)
 
-			// Assert
 			assert.Equal(t, tc.expected.status, rec.Code)
 		})
 	}
@@ -215,11 +203,8 @@ func TestProductHandler_FindByID(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// input
 		id string
-		// mocks
 		mockSetup func(mockUsecase *MockProductUsecase)
-		// expected
 		expected expected
 	}{
 		"should respond 200 with the product when it exists": {
@@ -246,7 +231,6 @@ func TestProductHandler_FindByID(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockUsecase = &MockProductUsecase{}
 				engine      = newTestEngine(mockUsecase)
@@ -257,10 +241,8 @@ func TestProductHandler_FindByID(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/products/"+tc.id, nil)
 			rec := httptest.NewRecorder()
 
-			// Act
 			engine.ServeHTTP(rec, req)
 
-			// Assert
 			assert.Equal(t, tc.expected.status, rec.Code)
 		})
 	}
@@ -272,11 +254,8 @@ func TestProductHandler_Update(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// input
 		body []byte
-		// mocks
 		mockSetup func(mockUsecase *MockProductUsecase)
-		// expected
 		expected expected
 	}{
 		"should respond 200 with the updated product": {
@@ -299,7 +278,6 @@ func TestProductHandler_Update(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockUsecase = &MockProductUsecase{}
 				engine      = newTestEngine(mockUsecase)
@@ -311,10 +289,8 @@ func TestProductHandler_Update(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 
-			// Act
 			engine.ServeHTTP(rec, req)
 
-			// Assert
 			assert.Equal(t, tc.expected.status, rec.Code)
 		})
 	}
@@ -326,9 +302,7 @@ func TestProductHandler_DeleteOne(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// mocks
 		mockSetup func(mockUsecase *MockProductUsecase)
-		// expected
 		expected expected
 	}{
 		"should respond 204 when the product is deleted": {
@@ -348,7 +322,6 @@ func TestProductHandler_DeleteOne(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockUsecase = &MockProductUsecase{}
 				engine      = newTestEngine(mockUsecase)
@@ -359,10 +332,8 @@ func TestProductHandler_DeleteOne(t *testing.T) {
 			req := httptest.NewRequest(http.MethodDelete, "/products/"+fixtureID.String(), nil)
 			rec := httptest.NewRecorder()
 
-			// Act
 			engine.ServeHTTP(rec, req)
 
-			// Assert
 			assert.Equal(t, tc.expected.status, rec.Code)
 		})
 	}

@@ -72,15 +72,10 @@ func configureLogger() *slog.Logger {
 	return slog.New(slog.NewJSONHandler(os.Stdout, nil))
 }
 
-// SkipDefaultTransaction avoids wrapping every single-statement write in an
-// implicit BEGIN/COMMIT — none of the current usecases need it (TDR-004),
-// and multi-step writes opt into transaction.Manager explicitly when needed.
 func openDB(dsn string) (*gorm.DB, error) {
 	return gorm.Open(gormpostgres.Open(dsn), &gorm.Config{SkipDefaultTransaction: true})
 }
 
-// runMigrations applies every pending migration before the server starts
-// listening; a migration failure aborts boot (TDR-003).
 func runMigrations(dsn string) error {
 	source, err := iofs.New(migrations.FS, ".")
 	if err != nil {

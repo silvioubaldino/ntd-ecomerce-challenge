@@ -21,9 +21,6 @@ type (
 	}
 )
 
-// HandleErr maps a domain error to the AYD-001 error envelope and writes the
-// matching HTTP status. Every handler funnels its errors through this single
-// function so the envelope shape and code mapping live in one place.
 func HandleErr(c *gin.Context, err error) {
 	status, body := toAPIError(err)
 	c.JSON(status, body)

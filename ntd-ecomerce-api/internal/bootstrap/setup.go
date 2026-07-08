@@ -8,11 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
-// SetupComponents wires every feature's handler/usecase/repository chain onto
-// the given engine. There is no authentication in the MVP — every route below
-// is public (guest-only scope, see requirements.md).
 func SetupComponents(r *gin.Engine, db *gorm.DB) {
 	reg := registry.NewRegistry(db)
 
+	// here should be configured the authentication middleware
 	product.Setup(r, reg)
 }

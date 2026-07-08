@@ -9,7 +9,6 @@ const (
 
 var ErrInvalidPagination = errors.New("invalid pagination")
 
-// Page is the caller's pagination request (1-based page number, page size).
 type Page struct {
 	Number int
 	Size   int
@@ -33,7 +32,6 @@ func (p Page) Offset() int {
 	return (p.Number - 1) * p.Size
 }
 
-// Pagination is the pagination block echoed back in list responses.
 type Pagination struct {
 	Page     int `json:"page"`
 	PageSize int `json:"page_size"`

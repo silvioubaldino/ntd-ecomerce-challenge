@@ -6,8 +6,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Registry is process-lifetime: it holds lazily-constructed repositories,
-// never per-request state.
 type Registry struct {
 	db *gorm.DB
 

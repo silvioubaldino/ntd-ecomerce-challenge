@@ -33,9 +33,7 @@ func TestProductInput_Validate(t *testing.T) {
 	)
 
 	tests := map[string]struct {
-		// input
 		input input
-		// expected
 		expected expected
 	}{
 		"should return no problems when input is valid": {
@@ -118,13 +116,10 @@ func TestProductInput_Validate(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			in := tc.input.mutate(validInput())
 
-			// Act
 			problems := in.Validate()
 
-			// Assert
 			assert.Equal(t, tc.expected.problems, problems)
 		})
 	}
@@ -136,7 +131,6 @@ func TestProductInput_ToProduct(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// expected
 		expected expected
 	}{
 		"should copy every field except id and timestamps": {
@@ -156,13 +150,10 @@ func TestProductInput_ToProduct(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			in := validInput()
 
-			// Act
 			product := in.ToProduct()
 
-			// Assert
 			assert.Equal(t, tc.expected.output, product)
 		})
 	}

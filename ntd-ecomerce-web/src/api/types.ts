@@ -1,6 +1,3 @@
-// Mirrors AYD-001@context. Decimals (price, weight_kg) travel as strings —
-// never parsed to number — per the contract.
-
 export interface Product {
   id: string;
   name: string;

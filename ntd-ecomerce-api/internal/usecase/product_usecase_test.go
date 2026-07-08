@@ -42,11 +42,8 @@ func TestProduct_Add(t *testing.T) {
 	createdProduct.ID = fixtureID
 
 	tests := map[string]struct {
-		// input
 		input input
-		// mocks
 		mockSetup func(mockRepo *MockProductRepository)
-		// expected
 		expected expected
 	}{
 		"should trim sku and create product when input is valid": {
@@ -72,7 +69,6 @@ func TestProduct_Add(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockRepo = &MockProductRepository{}
 				svc      = usecase.NewProduct(mockRepo)
@@ -80,10 +76,8 @@ func TestProduct_Add(t *testing.T) {
 			defer mockRepo.AssertExpectations(t)
 			tc.mockSetup(mockRepo)
 
-			// Act
 			output, err := svc.Add(context.Background(), tc.input.productInput)
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.Equal(t, tc.expected.output, output)
 		})
@@ -102,11 +96,8 @@ func TestProduct_FindByID(t *testing.T) {
 	)
 
 	tests := map[string]struct {
-		// input
 		input input
-		// mocks
 		mockSetup func(mockRepo *MockProductRepository)
-		// expected
 		expected expected
 	}{
 		"should return product when it exists": {
@@ -127,7 +118,6 @@ func TestProduct_FindByID(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockRepo = &MockProductRepository{}
 				svc      = usecase.NewProduct(mockRepo)
@@ -135,10 +125,8 @@ func TestProduct_FindByID(t *testing.T) {
 			defer mockRepo.AssertExpectations(t)
 			tc.mockSetup(mockRepo)
 
-			// Act
 			output, err := svc.FindByID(context.Background(), tc.input.id)
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.Equal(t, tc.expected.output, output)
 		})
@@ -163,11 +151,8 @@ func TestProduct_FindAll(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// input
 		input input
-		// mocks
 		mockSetup func(mockRepo *MockProductRepository)
-		// expected
 		expected expected
 	}{
 		"should return the page of products": {
@@ -188,7 +173,6 @@ func TestProduct_FindAll(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockRepo = &MockProductRepository{}
 				svc      = usecase.NewProduct(mockRepo)
@@ -196,10 +180,8 @@ func TestProduct_FindAll(t *testing.T) {
 			defer mockRepo.AssertExpectations(t)
 			tc.mockSetup(mockRepo)
 
-			// Act
 			output, err := svc.FindAll(context.Background(), tc.input.page)
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.Equal(t, tc.expected.output, output)
 		})
@@ -223,11 +205,8 @@ func TestProduct_Update(t *testing.T) {
 	updatedProduct := productWithID
 
 	tests := map[string]struct {
-		// input
 		input input
-		// mocks
 		mockSetup func(mockRepo *MockProductRepository)
-		// expected
 		expected expected
 	}{
 		"should update product when input is valid": {
@@ -253,7 +232,6 @@ func TestProduct_Update(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockRepo = &MockProductRepository{}
 				svc      = usecase.NewProduct(mockRepo)
@@ -261,10 +239,8 @@ func TestProduct_Update(t *testing.T) {
 			defer mockRepo.AssertExpectations(t)
 			tc.mockSetup(mockRepo)
 
-			// Act
 			output, err := svc.Update(context.Background(), tc.input.id, tc.input.productInput)
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.Equal(t, tc.expected.output, output)
 		})
@@ -282,11 +258,8 @@ func TestProduct_DeleteOne(t *testing.T) {
 	)
 
 	tests := map[string]struct {
-		// input
 		input input
-		// mocks
 		mockSetup func(mockRepo *MockProductRepository)
-		// expected
 		expected expected
 	}{
 		"should delete product when it exists": {
@@ -307,7 +280,6 @@ func TestProduct_DeleteOne(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			var (
 				mockRepo = &MockProductRepository{}
 				svc      = usecase.NewProduct(mockRepo)
@@ -315,10 +287,8 @@ func TestProduct_DeleteOne(t *testing.T) {
 			defer mockRepo.AssertExpectations(t)
 			tc.mockSetup(mockRepo)
 
-			// Act
 			err := svc.DeleteOne(context.Background(), tc.input.id)
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 		})
 	}

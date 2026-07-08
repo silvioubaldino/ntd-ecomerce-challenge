@@ -51,9 +51,7 @@ func TestProductRepository_Add(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// mocks
 		mockSetup func(mock sqlmock.Sqlmock)
-		// expected
 		expected expected
 	}{
 		"should return created product when insert succeeds": {
@@ -82,14 +80,11 @@ func TestProductRepository_Add(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			repo, mock := newTestRepo(t)
 			tc.mockSetup(mock)
 
-			// Act
 			_, err := repo.Add(context.Background(), fixtureProduct())
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
@@ -102,9 +97,7 @@ func TestProductRepository_FindByID(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// mocks
 		mockSetup func(mock sqlmock.Sqlmock)
-		// expected
 		expected expected
 	}{
 		"should return product when it exists": {
@@ -126,14 +119,11 @@ func TestProductRepository_FindByID(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			repo, mock := newTestRepo(t)
 			tc.mockSetup(mock)
 
-			// Act
 			_, err := repo.FindByID(context.Background(), fixtureID)
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
@@ -146,9 +136,7 @@ func TestProductRepository_Delete(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// mocks
 		mockSetup func(mock sqlmock.Sqlmock)
-		// expected
 		expected expected
 	}{
 		"should succeed when a row is deleted": {
@@ -169,14 +157,11 @@ func TestProductRepository_Delete(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			repo, mock := newTestRepo(t)
 			tc.mockSetup(mock)
 
-			// Act
 			err := repo.Delete(context.Background(), fixtureID)
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
@@ -189,9 +174,7 @@ func TestProductRepository_Update(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		// mocks
 		mockSetup func(mock sqlmock.Sqlmock)
-		// expected
 		expected expected
 	}{
 		"should return updated product when the row exists": {
@@ -222,16 +205,13 @@ func TestProductRepository_Update(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Arrange
 			repo, mock := newTestRepo(t)
 			tc.mockSetup(mock)
 			product := fixtureProduct()
 			product.ID = fixtureID
 
-			// Act
 			_, err := repo.Update(context.Background(), product)
 
-			// Assert
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})

@@ -13,7 +13,6 @@ type MockProductUsecase struct {
 	mock.Mock
 }
 
-// ctx is ignored in m.Called.
 func (m *MockProductUsecase) Add(_ context.Context, input domain.ProductInput) (domain.Product, error) {
 	args := m.Called(input)
 	return args.Get(0).(domain.Product), args.Error(1)
