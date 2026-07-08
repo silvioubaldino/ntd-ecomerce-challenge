@@ -25,4 +25,5 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
+- Filled REQ-01 (functional/non-functional requirements, business rules, MVP scope) and added the SKU term to the glossary.
 - Docs framework restructured into per-part folders (`ntd-ecomerce-context`, `ntd-ecomerce-api`, `ntd-ecomerce-web`).
