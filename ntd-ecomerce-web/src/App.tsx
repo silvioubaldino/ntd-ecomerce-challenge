@@ -3,6 +3,7 @@ import { Layout } from "./components/Layout";
 import { ProductListPage } from "./features/products/ProductListPage";
 import { ProductCreatePage } from "./features/products/ProductCreatePage";
 import { ProductEditPage } from "./features/products/ProductEditPage";
+import { ProductImportPage } from "./features/products/ProductImportPage";
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/products" replace />} />
         <Route path="/products" element={<ProductListPage />} />
         <Route path="/products/new" element={<ProductCreatePage />} />
+        <Route path="/products/import" element={<ProductImportPage />} />
         <Route path="/products/:id/edit" element={<ProductEditPage />} />
       </Route>
     </Routes>

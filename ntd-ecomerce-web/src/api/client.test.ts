@@ -57,3 +57,42 @@ describe("apiClient error envelope parsing", () => {
     expect(error.code).toBe("product_not_found");
   });
 });
+
+describe("apiClient.postForm", () => {
+  it("sends a multipart body without a JSON Content-Type header", async () => {
+    let receivedContentType: string | null = null;
+    server.use(
+      http.post("/api/products/import", ({ request }) => {
+        receivedContentType = request.headers.get("content-type");
+        return HttpResponse.json({ summary: { total: 0, imported: 0, rejected: 0 }, rejected: [] });
+      }),
+    );
+
+    const formData = new FormData();
+    formData.append("file", new File(["name,sku"], "products.csv", { type: "text/csv" }));
+    await apiClient.postForm("/products/import", formData);
+
+    expect(receivedContentType).toMatch(/^multipart\/form-data/);
+  });
+
+  it("parses the error envelope for a 422 invalid_header response", async () => {
+    server.use(
+      http.post("/api/products/import", () =>
+        HttpResponse.json(
+          { error: { code: "invalid_header", message: "header mismatch" } },
+          { status: 422 },
+        ),
+      ),
+    );
+
+    const formData = new FormData();
+    formData.append("file", new File(["bad"], "products.csv"));
+    const error = (await apiClient
+      .postForm("/products/import", formData)
+      .catch((e) => e)) as ApiError;
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.status).toBe(422);
+    expect(error.code).toBe("invalid_header");
+  });
+});

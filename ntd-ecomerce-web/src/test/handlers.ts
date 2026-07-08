@@ -50,4 +50,11 @@ export const handlers = [
   http.delete("/api/products/:id", () => {
     return new HttpResponse(null, { status: 204 });
   }),
+
+  http.post("/api/products/import", () => {
+    return HttpResponse.json({
+      summary: { total: 1, imported: 1, rejected: 0 },
+      rejected: [],
+    });
+  }),
 ];

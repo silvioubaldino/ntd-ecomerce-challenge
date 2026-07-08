@@ -90,6 +90,22 @@ export function AlertIcon({ className }: IconProps) {
   );
 }
 
+export function UploadIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M12 16V4M7 9l5-5 5 5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+export function DownloadIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M12 4v12M7 11l5 5 5-5M4 20h16" />
+    </svg>
+  );
+}
+
 export function ShieldIcon({ className }: IconProps) {
   return (
     <svg {...base(className)}>
