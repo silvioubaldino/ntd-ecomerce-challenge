@@ -1,7 +1,7 @@
 ---
 id: SPEC-003
 type: spec
-status: draft
+status: done
 updated: 2026-07-08
 parents: [AYD-003@context]
 related: [GLO, SPEC-001]
@@ -103,10 +103,10 @@ out of scope for this spec (possible TDR@api if volume justifies).
   (table-driven, AAA, testify).
 
 ## Checklist
-- [ ] `GET /products?q=` filters case-insensitive over name/sku/description/category
-- [ ] absent/blank `q` == current behavior (unfiltered)
-- [ ] `pagination.total` reflects the post-filter set; no matches → `data: []`, `total: 0`
-- [ ] Ordering: `name asc` when `q` present; `created_at desc` (SPEC-001) unchanged when `q` absent
-- [ ] No new endpoint/error code; invalid `page`/`page_size` still 422
-- [ ] All acceptance scenarios covered by passing tests; `make linter` clean
-- [ ] Changelog updated; spec marked `done`
+- [x] `GET /products?q=` filters case-insensitive over name/sku/description/category
+- [x] absent/blank `q` == current behavior (unfiltered)
+- [x] `pagination.total` reflects the post-filter set; no matches → `data: []`, `total: 0`
+- [x] Ordering: `name asc` when `q` present; `created_at desc` (SPEC-001) unchanged when `q` absent
+- [x] No new endpoint/error code; invalid `page`/`page_size` still 422
+- [x] All acceptance scenarios covered by passing tests; `make linter` clean
+- [x] Changelog updated; spec marked `done`

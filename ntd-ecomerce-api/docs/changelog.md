@@ -19,6 +19,7 @@ CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
+- Implemented SPEC-003 - Product catalog search, extending the product list with an optional free-text filter.
 - Implemented SPEC-002 - Product bulk import from CSV, with per-row validation and rejection reporting. [#09](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/9)
 - Implemented SPEC-001 - Product catalog CRUD [#04](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/4)
 - Chose and documented the api stack; drafted SPEC-001 (Product CRUD). [#03](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/3)

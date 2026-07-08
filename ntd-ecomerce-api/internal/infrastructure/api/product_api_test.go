@@ -148,6 +148,7 @@ func TestProductHandler_Add(t *testing.T) {
 func TestProductHandler_FindAll(t *testing.T) {
 	type expected struct {
 		status int
+		code   string
 	}
 
 	tests := map[string]struct {
@@ -179,6 +180,71 @@ func TestProductHandler_FindAll(t *testing.T) {
 			mockSetup: func(_ *MockProductUsecase) {},
 			expected:  expected{status: http.StatusUnprocessableEntity},
 		},
+		"should behave as unfiltered list when q is absent": {
+			query: "",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: ""}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should behave as unfiltered list when q is blank": {
+			query: "?q=%20%20%20",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: ""}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should pass the trimmed q to the usecase": {
+			query: "?q=%20blue%20",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: "blue"}).
+					Return(domain.ProductList{
+						Data:       []domain.Product{{Name: "Blue Shirt"}},
+						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 1},
+					}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should respond 200 with empty data when q has no matches": {
+			query: "?q=zzz-nomatch",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: "zzz-nomatch"}).
+					Return(domain.ProductList{
+						Data:       []domain.Product{},
+						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 0},
+					}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should paginate the filtered set when q and page are given": {
+			query: "?q=shirt&page=2&page_size=20",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.Page{Number: 2, Size: 20, Query: "shirt"}).
+					Return(domain.ProductList{
+						Data:       make([]domain.Product, 5),
+						Pagination: domain.Pagination{Page: 2, PageSize: 20, Total: 25},
+					}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should be case-insensitive by passing q through unchanged": {
+			query: "?q=BLUE",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: "BLUE"}).
+					Return(domain.ProductList{
+						Data:       []domain.Product{{Name: "Blue Shirt"}},
+						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 1},
+					}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should respond 422 when page is invalid regardless of q": {
+			query:     "?q=blue&page=0",
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected:  expected{status: http.StatusUnprocessableEntity, code: "validation_error"},
+		},
 	}
 
 	for name, tc := range tests {
@@ -194,6 +260,12 @@ func TestProductHandler_FindAll(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			engine.ServeHTTP(rec, req)
+
+			if tc.expected.code != "" {
+				var envelope testErrorEnvelope
+				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &envelope))
+				assert.Equal(t, tc.expected.code, envelope.Error.Code)
+			}
 
 			assert.Equal(t, tc.expected.status, rec.Code)
 		})

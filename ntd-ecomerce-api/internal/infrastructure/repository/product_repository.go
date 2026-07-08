@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"ntd-ecomerce-api/internal/domain"
@@ -88,12 +89,26 @@ func (r *ProductRepository) FindAll(ctx context.Context, page domain.Page) (doma
 		total  int64
 	)
 
-	if err := r.db.WithContext(ctx).Model(&productModel{}).Count(&total).Error; err != nil {
+	query := r.db.WithContext(ctx).Model(&productModel{})
+	if page.Query != "" {
+		pattern := "%" + strings.ToLower(page.Query) + "%"
+		query = query.Where(
+			"LOWER(name) LIKE ? OR LOWER(sku) LIKE ? OR LOWER(description) LIKE ? OR LOWER(category) LIKE ?",
+			pattern, pattern, pattern, pattern,
+		)
+	}
+
+	if err := query.Count(&total).Error; err != nil {
 		return domain.ProductList{}, fmt.Errorf("counting products: %w", err)
 	}
 
-	err := r.db.WithContext(ctx).
-		Order("created_at desc").
+	order := "created_at desc"
+	if page.Query != "" {
+		order = "name asc"
+	}
+
+	err := query.
+		Order(order).
 		Offset(page.Offset()).
 		Limit(page.Size).
 		Find(&models).Error
