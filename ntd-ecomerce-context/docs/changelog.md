@@ -16,13 +16,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 **Policy**:
+
 - **Order:** most recent on top; new entries go **above** the previous ones.
 - **Unreleased:** unreleased work accrues under `## Unreleased` (always the top block), with
-  no date/version. On a release, `## Unreleased` becomes `## [dd-MM-yyyy - vX.Y.Z]` and a
-  new empty `## Unreleased` is opened above it.
+no date/version. On a release, `## Unreleased` becomes `## [dd-MM-yyyy - vX.Y.Z]` and a
+new empty `## Unreleased` is opened above it.
 - **One line per PR:** each PR adds a **single line** summarizing what it delivers — general,
-  no implementation detail; reference the PR when useful.
+no implementation detail; reference the PR when useful.
+
+
 
 ## Unreleased
 
+- Filled REQ-01 (functional/non-functional requirements, business rules, MVP scope) and added the SKU term to the glossary. [#01](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/1) 
 - Docs framework restructured into per-part folders (`ntd-ecomerce-context`, `ntd-ecomerce-api`, `ntd-ecomerce-web`).
+
