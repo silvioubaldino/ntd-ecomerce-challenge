@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"io"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
@@ -36,4 +37,9 @@ func (m *MockProductUsecase) Update(_ context.Context, id uuid.UUID, input domai
 func (m *MockProductUsecase) DeleteOne(_ context.Context, id uuid.UUID) error {
 	args := m.Called(id)
 	return args.Error(0)
+}
+
+func (m *MockProductUsecase) Import(_ context.Context, r io.Reader) (domain.ImportReport, error) {
+	args := m.Called(r)
+	return args.Get(0).(domain.ImportReport), args.Error(1)
 }

@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -18,6 +20,7 @@ type (
 		FindByID(ctx context.Context, id uuid.UUID) (domain.Product, error)
 		Update(ctx context.Context, id uuid.UUID, input domain.ProductInput) (domain.Product, error)
 		DeleteOne(ctx context.Context, id uuid.UUID) error
+		Import(ctx context.Context, r io.Reader) (domain.ImportReport, error)
 	}
 
 	ProductHandler struct {
@@ -34,6 +37,7 @@ func NewProductHandlers(r *gin.Engine, srv ProductUsecase) {
 	group.GET("/:id", handler.FindByID())
 	group.PUT("/:id", handler.Update())
 	group.DELETE("/:id", handler.DeleteOne())
+	group.POST("/import", handler.Import())
 }
 
 func (h ProductHandler) Add() gin.HandlerFunc {
@@ -138,6 +142,41 @@ func (h ProductHandler) DeleteOne() gin.HandlerFunc {
 		}
 
 		c.Status(http.StatusNoContent)
+	}
+}
+
+func (h ProductHandler) Import() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
+		fileHeader, err := c.FormFile("file")
+		if err != nil {
+			HandleErr(c, domain.WrapBadRequest(err, "invalid_file", "file is required"))
+			return
+		}
+		if fileHeader.Size == 0 {
+			HandleErr(c, domain.WrapBadRequest(errors.New("empty file"), "invalid_file", "file must not be empty"))
+			return
+		}
+		if fileHeader.Size > domain.MaxImportFileBytes {
+			HandleErr(c, domain.WrapPayloadTooLarge(errors.New("file too large"), "file_too_large", "file exceeds the maximum allowed size"))
+			return
+		}
+
+		file, err := fileHeader.Open()
+		if err != nil {
+			HandleErr(c, domain.WrapBadRequest(err, "invalid_file", "file could not be read"))
+			return
+		}
+		defer file.Close()
+
+		report, err := h.usecase.Import(ctx, file)
+		if err != nil {
+			HandleErr(c, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, report)
 	}
 }
 

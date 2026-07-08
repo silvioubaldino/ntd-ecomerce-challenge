@@ -33,7 +33,7 @@ func TestProductInput_Validate(t *testing.T) {
 	)
 
 	tests := map[string]struct {
-		input input
+		input    input
 		expected expected
 	}{
 		"should return no problems when input is valid": {

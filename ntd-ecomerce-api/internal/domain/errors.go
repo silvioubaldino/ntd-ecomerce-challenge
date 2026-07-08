@@ -8,12 +8,16 @@ const (
 	KindValidation Kind = iota
 	KindNotFound
 	KindConflict
+	KindBadRequest
+	KindPayloadTooLarge
 )
 
 var (
-	ErrValidation = errors.New("validation error")
-	ErrNotFound   = errors.New("not found")
-	ErrConflict   = errors.New("conflict")
+	ErrValidation      = errors.New("validation error")
+	ErrNotFound        = errors.New("not found")
+	ErrConflict        = errors.New("conflict")
+	ErrBadRequest      = errors.New("bad request")
+	ErrPayloadTooLarge = errors.New("payload too large")
 )
 
 type Error struct {
@@ -47,6 +51,15 @@ func WrapInvalidInput(err error, message string) error {
 	}
 }
 
+func WrapValidationCode(err error, code, message string) error {
+	return &Error{
+		Kind:    KindValidation,
+		Code:    code,
+		Message: message,
+		causes:  []error{ErrValidation, err},
+	}
+}
+
 func WrapNotFound(err error, code, message string) error {
 	return &Error{
 		Kind:    KindNotFound,
@@ -62,5 +75,23 @@ func WrapConflict(err error, code, message string) error {
 		Code:    code,
 		Message: message,
 		causes:  []error{ErrConflict, err},
+	}
+}
+
+func WrapBadRequest(err error, code, message string) error {
+	return &Error{
+		Kind:    KindBadRequest,
+		Code:    code,
+		Message: message,
+		causes:  []error{ErrBadRequest, err},
+	}
+}
+
+func WrapPayloadTooLarge(err error, code, message string) error {
+	return &Error{
+		Kind:    KindPayloadTooLarge,
+		Code:    code,
+		Message: message,
+		causes:  []error{ErrPayloadTooLarge, err},
 	}
 }

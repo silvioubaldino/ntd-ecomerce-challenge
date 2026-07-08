@@ -19,7 +19,7 @@ func TestPage_Validate(t *testing.T) {
 	)
 
 	tests := map[string]struct {
-		input input
+		input    input
 		expected expected
 	}{
 		"should accept the default page": {
@@ -66,7 +66,7 @@ func TestPage_Offset(t *testing.T) {
 	)
 
 	tests := map[string]struct {
-		input input
+		input    input
 		expected expected
 	}{
 		"should return 0 for the first page": {

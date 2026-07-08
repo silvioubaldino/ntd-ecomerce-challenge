@@ -1,7 +1,7 @@
 ---
 id: SPEC-002
 type: spec
-status: draft
+status: done
 updated: 2026-07-08
 parents: [AYD-002@context]
 related: [GLO, TDR-002, TDR-004, SPEC-001]
@@ -152,9 +152,9 @@ calls the **existing** `repo.Add` row-by-row (autocommit = partial import); a do
   (table-driven, AAA, testify, no `mock.Anything`).
 
 ## Checklist
-- [ ] `POST /products/import` returns `ImportReport` with correct `summary`/`rejected[]`
-- [ ] Every RN-02 case from the reference CSV is rejected with the right field reason
-- [ ] Valid rows imported (partial success); zero values accepted; decimals stay NUMERIC
-- [ ] `invalid_header` 422, `invalid_file` 400, `file_too_large` 413 via the error envelope
-- [ ] All acceptance scenarios covered by passing tests; `make linter` clean
-- [ ] Changelog line added; spec marked `done`
+- [x] `POST /products/import` returns `ImportReport` with correct `summary`/`rejected[]`
+- [x] Every RN-02 case from the reference CSV is rejected with the right field reason
+- [x] Valid rows imported (partial success); zero values accepted; decimals stay NUMERIC
+- [x] `invalid_header` 422, `invalid_file` 400, `file_too_large` 413 via the error envelope
+- [x] All acceptance scenarios covered by passing tests; `make linter` clean
+- [x] Changelog line added; spec marked `done`

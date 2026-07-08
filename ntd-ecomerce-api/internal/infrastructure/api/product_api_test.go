@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"ntd-ecomerce-api/internal/domain"
@@ -63,9 +66,9 @@ func TestProductHandler_Add(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		body []byte
+		body      []byte
 		mockSetup func(mockUsecase *MockProductUsecase)
-		expected expected
+		expected  expected
 	}{
 		"should respond 201 with string decimals when product is created": {
 			body: fixtureProductInputJSON(),
@@ -148,9 +151,9 @@ func TestProductHandler_FindAll(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		query string
+		query     string
 		mockSetup func(mockUsecase *MockProductUsecase)
-		expected expected
+		expected  expected
 	}{
 		"should default to page 1 size 20 when no query params are given": {
 			query: "",
@@ -203,9 +206,9 @@ func TestProductHandler_FindByID(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		id string
+		id        string
 		mockSetup func(mockUsecase *MockProductUsecase)
-		expected expected
+		expected  expected
 	}{
 		"should respond 200 with the product when it exists": {
 			id: fixtureID.String(),
@@ -254,9 +257,9 @@ func TestProductHandler_Update(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		body []byte
+		body      []byte
 		mockSetup func(mockUsecase *MockProductUsecase)
-		expected expected
+		expected  expected
 	}{
 		"should respond 200 with the updated product": {
 			body: fixtureProductInputJSON(),
@@ -296,6 +299,102 @@ func TestProductHandler_Update(t *testing.T) {
 	}
 }
 
+func multipartCSVRequest(t *testing.T, content []byte) *http.Request {
+	t.Helper()
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, err := writer.CreateFormFile("file", "products.csv")
+	require.NoError(t, err)
+	_, err = part.Write(content)
+	require.NoError(t, err)
+	require.NoError(t, writer.Close())
+
+	req := httptest.NewRequest(http.MethodPost, "/products/import", body)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	return req
+}
+
+func matchesContent(expected []byte) any {
+	return mock.MatchedBy(func(r io.Reader) bool {
+		data, err := io.ReadAll(r)
+		return err == nil && bytes.Equal(data, expected)
+	})
+}
+
+func TestProductHandler_Import(t *testing.T) {
+	type expected struct {
+		status int
+		code   string
+	}
+
+	validCSV := []byte("name,sku,description,category,price,stock,weight_kg\nRunning Shoes,RS-001,desc,Footwear,89.99,150,0.35\n")
+	oversizedCSV := bytes.Repeat([]byte("a"), int(domain.MaxImportFileBytes)+1)
+
+	tests := map[string]struct {
+		req       func(t *testing.T) *http.Request
+		mockSetup func(mockUsecase *MockProductUsecase)
+		expected  expected
+	}{
+		"should respond 200 with the import report for a valid file": {
+			req: func(t *testing.T) *http.Request { return multipartCSVRequest(t, validCSV) },
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("Import", matchesContent(validCSV)).Return(domain.ImportReport{
+					Summary:  domain.ImportSummary{Total: 1, Imported: 1, Rejected: 0},
+					Rejected: []domain.RejectedRow{},
+				}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should respond 400 when no file is sent": {
+			req: func(_ *testing.T) *http.Request {
+				return httptest.NewRequest(http.MethodPost, "/products/import", bytes.NewReader(nil))
+			},
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected:  expected{status: http.StatusBadRequest, code: "invalid_file"},
+		},
+		"should respond 400 when the file is empty": {
+			req:       func(t *testing.T) *http.Request { return multipartCSVRequest(t, []byte{}) },
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected:  expected{status: http.StatusBadRequest, code: "invalid_file"},
+		},
+		"should respond 413 when the file exceeds the size cap": {
+			req:       func(t *testing.T) *http.Request { return multipartCSVRequest(t, oversizedCSV) },
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected:  expected{status: http.StatusRequestEntityTooLarge, code: "file_too_large"},
+		},
+		"should respond 422 when the usecase reports an invalid header": {
+			req: func(t *testing.T) *http.Request { return multipartCSVRequest(t, validCSV) },
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("Import", matchesContent(validCSV)).
+					Return(domain.ImportReport{}, domain.WrapValidationCode(domain.ErrInvalidCSVHeader, "invalid_header", "csv header does not match"))
+			},
+			expected: expected{status: http.StatusUnprocessableEntity, code: "invalid_header"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var (
+				mockUsecase = &MockProductUsecase{}
+				engine      = newTestEngine(mockUsecase)
+			)
+			defer mockUsecase.AssertExpectations(t)
+			tc.mockSetup(mockUsecase)
+
+			rec := httptest.NewRecorder()
+			engine.ServeHTTP(rec, tc.req(t))
+
+			assert.Equal(t, tc.expected.status, rec.Code)
+			if tc.expected.code != "" {
+				var envelope testErrorEnvelope
+				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &envelope))
+				assert.Equal(t, tc.expected.code, envelope.Error.Code)
+			}
+		})
+	}
+}
+
 func TestProductHandler_DeleteOne(t *testing.T) {
 	type expected struct {
 		status int
@@ -303,7 +402,7 @@ func TestProductHandler_DeleteOne(t *testing.T) {
 
 	tests := map[string]struct {
 		mockSetup func(mockUsecase *MockProductUsecase)
-		expected expected
+		expected  expected
 	}{
 		"should respond 204 when the product is deleted": {
 			mockSetup: func(mockUsecase *MockProductUsecase) {
