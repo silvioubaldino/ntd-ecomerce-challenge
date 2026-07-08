@@ -2,7 +2,7 @@
 id: AYD-002
 type: design
 status: approved
-updated: 2026-07-08
+updated: 2026-07-09
 parents: [RF-02]
 children: [SPEC-002@api, SPEC-002@web]
 related: [GLO, AYD-001]
@@ -25,7 +25,7 @@ instead of silently dropping or importing them. Outcome: an end-to-end bulk-impo
 | Part | Role in this feature | Generated SPEC |
 |-------|---------------------|-------------|
 | api | Parses the CSV, validates each row (RN-01/RN-02), inserts valid rows, returns a per-row report | SPEC-002@api |
-| web | CSV upload UI; shows the import summary and the list of rejected rows with reasons | SPEC-002@web |
+| web | CSV upload UI; shows the import summary and the list of rejected rows with reasons; offers a downloadable blank CSV template | SPEC-002@web |
 
 ## Contract (source of truth)
 
@@ -86,6 +86,17 @@ with a CSV formula-injection character (`= + - @` or a leading tab). SQL-injecti
 text (e.g. `Robert'); DROP TABLE products;--`) is **not** treated as unsafe by itself — it is
 neutralized by parameterized queries and stored verbatim — unless it also trips one of the
 rules above.
+
+### Template download (web, UX only — no contract with api)
+The import page offers a "download template" action producing a blank CSV with just the
+header row: `name,sku,description,category,price,stock,weight_kg` (same order as RN-01).
+This is a **static asset served by web**, not an api endpoint: the content never varies
+per request or per user, so a round-trip to the backend would add latency and an
+endpoint for zero dynamic value. SPEC-002@web ships it as a static file (or a client-side
+generated blob) bundled with the web app.
+Trade-off: the header list is duplicated between this AYD/RN-01 and the static asset.
+Acceptable because any column change is a contract change (this AYD) already requiring a
+web PR — the static template updates in the same PR.
 
 ## Affected domain model
 No new entity. Writes **Product** (AYD-001) rows; the CSV columns map 1:1 onto the Product
