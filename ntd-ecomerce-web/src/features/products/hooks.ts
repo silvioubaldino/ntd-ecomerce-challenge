@@ -6,6 +6,7 @@ import {
   listProducts,
   updateProduct,
 } from "../../api/products";
+import { importProducts } from "../../api/import";
 import type { ProductInput } from "../../api/types";
 
 const productKeys = {
@@ -52,6 +53,16 @@ export function useDeleteProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deleteProduct(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products", "list"] });
+    },
+  });
+}
+
+export function useImportProducts() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => importProducts(file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products", "list"] });
     },

@@ -1,7 +1,7 @@
 ---
 id: SPEC-002
 type: spec
-status: draft
+status: done
 updated: 2026-07-08
 parents: [AYD-002@context]
 related: [GLO, TDR-002, TDR-003, TDR-006, SPEC-001]
@@ -150,11 +150,11 @@ template is a client-side generated Blob download — no api call (AYD-002 §Tem
   `ApiError` and omission of the JSON `Content-Type`.
 
 ## Checklist
-- [ ] `/products/import` reachable from the catalog; back-link returns to the list
-- [ ] Upload posts multipart `file`; success shows summary and (when present) rejected rows
-- [ ] Reason codes rendered as readable labels, not raw codes
-- [ ] `invalid_header` / `invalid_file` / `file_too_large` / generic errors shown via the envelope
-- [ ] "Download template" produces the exact header CSV with no api request
-- [ ] Products list cache invalidated after a successful import
-- [ ] All acceptance scenarios covered by passing tests; lint clean
-- [ ] Changelog line added; spec `done`; AYD-002 children include SPEC-002@web
+- [x] `/products/import` reachable from the catalog; back-link returns to the list
+- [x] Upload posts multipart `file`; success shows summary and (when present) rejected rows
+- [x] Reason codes rendered as readable labels, not raw codes
+- [x] `invalid_header` / `invalid_file` / `file_too_large` / generic errors shown via the envelope
+- [x] "Download template" produces the exact header CSV with no api request
+- [x] Products list cache invalidated after a successful import
+- [x] All acceptance scenarios covered by passing tests; lint clean
+- [x] Changelog line added; spec `done`; AYD-002 children include SPEC-002@web

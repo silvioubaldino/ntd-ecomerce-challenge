@@ -15,6 +15,7 @@ import {
   PencilIcon,
   PlusIcon,
   TrashIcon,
+  UploadIcon,
 } from "../../components/ui/icons";
 import type { Product } from "../../api/types";
 import { useDeleteProduct, useProducts } from "./hooks";
@@ -59,10 +60,16 @@ export function ProductListPage() {
         title="Products"
         description="Manage your marketplace catalog."
         actions={
-          <ButtonLink to="/products/new">
-            <PlusIcon className="h-4 w-4" />
-            New Product
-          </ButtonLink>
+          <>
+            <ButtonLink to="/products/import" variant="secondary">
+              <UploadIcon className="h-4 w-4" />
+              Import CSV
+            </ButtonLink>
+            <ButtonLink to="/products/new">
+              <PlusIcon className="h-4 w-4" />
+              New Product
+            </ButtonLink>
+          </>
         }
       />
 

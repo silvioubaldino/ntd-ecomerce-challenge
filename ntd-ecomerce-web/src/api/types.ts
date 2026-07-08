@@ -27,10 +27,30 @@ export interface ProductList {
   pagination: Pagination;
 }
 
+export interface ImportSummary {
+  total: number;
+  imported: number;
+  rejected: number;
+}
+
+export interface RejectedRow {
+  row: number;
+  sku: string;
+  errors: Record<string, string>;
+}
+
+export interface ImportReport {
+  summary: ImportSummary;
+  rejected: RejectedRow[];
+}
+
 export type ApiErrorCode =
   | "validation_error"
   | "sku_already_exists"
   | "product_not_found"
+  | "invalid_header"
+  | "invalid_file"
+  | "file_too_large"
   | "internal_error"
   | string;
 
