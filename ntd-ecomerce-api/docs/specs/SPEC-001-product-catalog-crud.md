@@ -1,7 +1,7 @@
 ---
 id: SPEC-001
 type: spec
-status: draft
+status: done
 updated: 2026-07-08
 parents: [AYD-001@context]
 related: [GLO, TDR-001, TDR-002, TDR-003, TDR-004]
@@ -134,9 +134,9 @@ applied at boot (TDR-003).
   testify, no `mock.Anything`).
 
 ## Checklist
-- [ ] Service scaffold boots via `docker compose up` (api + postgres)
-- [ ] Migration applied at boot; schema matches AYD-001 resource
-- [ ] All 5 endpoints respond per contract (status codes, envelope, snake_case)
-- [ ] Decimals are strings in JSON and NUMERIC in the DB — no floats anywhere
-- [ ] All acceptance scenarios covered by passing tests; `make linter` clean
-- [ ] Changelog line added; spec marked `done`; AYD-001 children confirmed
+- [x] Service scaffold boots via `docker compose up` (api + postgres)
+- [x] Migration applied at boot; schema matches AYD-001 resource
+- [x] All 5 endpoints respond per contract (status codes, envelope, snake_case)
+- [x] Decimals are strings in JSON and NUMERIC in the DB — no floats anywhere
+- [x] All acceptance scenarios covered by passing tests; `make linter` clean
+- [x] Changelog line added; spec marked `done`; AYD-001 children confirmed

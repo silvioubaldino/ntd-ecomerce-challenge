@@ -52,7 +52,7 @@ Follow it exactly — these rules override generic Gin habits. The wire contract
 
 **Error handling**
 - Every error from parsing or from the usecase goes straight through
-  `HandleErr(c, ctx, err)` followed by a bare `return`. Never hand-build a JSON error
+  `HandleErr(c, err)` followed by a bare `return`. Never hand-build a JSON error
   body in a handler — `HandleErr`/`toAPIError` in `errors_handler.go` own the envelope
   and the code mapping (`validation_error` 422, `sku_already_exists` 409,
   `product_not_found` 404, fallback `internal_error` 500).
@@ -106,13 +106,13 @@ func (h ProductHandler) Add() gin.HandlerFunc {
 		ctx := c.Request.Context()
 		var input domain.ProductInput
 		if err := c.ShouldBindJSON(&input); err != nil {
-			HandleErr(c, ctx, domain.WrapInvalidInput(err, "invalid json body"))
+			HandleErr(c, domain.WrapInvalidInput(err, "invalid json body"))
 			return
 		}
 
 		created, err := h.usecase.Add(ctx, input)
 		if err != nil {
-			HandleErr(c, ctx, err)
+			HandleErr(c, err)
 			return
 		}
 
@@ -126,13 +126,13 @@ func (h ProductHandler) FindAll() gin.HandlerFunc {
 
 		page, err := h.parsePage(c)
 		if err != nil {
-			HandleErr(c, ctx, err)
+			HandleErr(c, err)
 			return
 		}
 
 		list, err := h.usecase.FindAll(ctx, page)
 		if err != nil {
-			HandleErr(c, ctx, err)
+			HandleErr(c, err)
 			return
 		}
 
@@ -146,12 +146,12 @@ func (h ProductHandler) DeleteOne() gin.HandlerFunc {
 
 		id, err := uuid.Parse(c.Param("id"))
 		if err != nil {
-			HandleErr(c, ctx, domain.WrapInvalidInput(err, "id must be valid"))
+			HandleErr(c, domain.WrapInvalidInput(err, "id must be valid"))
 			return
 		}
 
 		if err := h.usecase.DeleteOne(ctx, id); err != nil {
-			HandleErr(c, ctx, err)
+			HandleErr(c, err)
 			return
 		}
 
@@ -192,7 +192,7 @@ func (h ProductHandler) parsePage(c *gin.Context) (domain.Page, error) {
 |---|---|
 | Import `usecase.Xxx` concrete struct in the handler file | Declare a narrow `XxxUsecase` interface with only the methods used |
 | Business logic in the handler | Push it into the usecase |
-| Hand-rolled `c.JSON(code, gin.H{"error": ...})` | `HandleErr(c, ctx, err)` then `return` |
+| Hand-rolled `c.JSON(code, gin.H{"error": ...})` | `HandleErr(c, err)` then `return` |
 | `float64` for price/weight anywhere on the wire | `decimal.Decimal` in Go, string in JSON |
 | Bare `gin.H{}`/unnamed map as a list response | Named response struct with `data` + `pagination` |
 | Parsing an optional query param without checking `""` first | Guard on empty string |

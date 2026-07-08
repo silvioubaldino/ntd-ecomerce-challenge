@@ -17,5 +17,6 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) +
 
 ## Unreleased
 
-- Added TDR-001..004 (Go+Gin, GORM+decimal, golang-migrate, layered architecture), SPEC-001 (Product CRUD), and adapted the Go skills to this service's conventions.
+- Implemented SPEC-001 - Product catalog CRUD [#04](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/4)
+- Added TDR-001..004 (Go+Gin, GORM+decimal, golang-migrate, layered architecture), SPEC-001 (Product CRUD), and adapted the Go skills to this service's conventions. [#03](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/3)
 - Service scaffold initialized (specs, technical_decisions).
