@@ -1,7 +1,7 @@
 ---
 id: REQ-01
 type: requirements
-title: Requisitos e glossário
+title: Requirements and glossary
 status: draft
 updated: 2026-07-08
 parents: []
@@ -9,41 +9,41 @@ children: []
 related: [GLO]
 ---
 
-# Requisitos
+# Requirements
 
-> Preencha a partir do enunciado do challenge. Mantenha enxuto e objetivo.
+> Fill in from the challenge statement. Keep it lean and objective.
 
-## Funcionais (RF)
-| ID | Requisito | Prioridade | Critério de aceite |
+## Functional (RF)
+| ID | Requirement | Priority | Acceptance criterion |
 |----|-----------|------------|--------------------|
 | RF-01 |  | Must |  |
 
-## Não-funcionais (RNF)
-| ID | Categoria | Requisito | Alvo |
-|----|-----------|-----------|------|
+## Non-functional (RNF)
+| ID | Category | Requirement | Target |
+|----|----------|-----------|------|
 | RNF-01 | Performance |  |  |
-| RNF-02 | Segurança |  |  |
+| RNF-02 | Security |  |  |
 
-## Regras de negócio
+## Business rules
 - RN-01:
 
-## Escopo do MVP
-- **Dentro:**
-- **Fora (por enquanto):**
+## MVP scope
+- **In:**
+- **Out (for now):**
 
 ---
 
-# Glossário (linguagem ubíqua) — GLO
+# Glossary (ubiquitous language) — GLO
 
 <!--
 id: GLO / type: glossary
-Definições canônicas do domínio. Docs e código (context, api, web) usam estes termos.
-Regra: adicione o termo aqui ANTES de usá-lo. Termo canônico em INGLÊS (vira código),
-definição em português. Liste sinônimos a evitar — é onde a ambiguidade vira bug.
+Canonical domain definitions. Docs and code (context, api, web) use these terms.
+Rule: add the term here BEFORE using it. List synonyms to avoid — that's where
+ambiguity turns into a bug.
 -->
 
-| Termo (EN) | Definição | Sinônimos a evitar |
+| Term (EN) | Definition | Synonyms to avoid |
 |------------|-----------|--------------------|
-| Product | _Item à venda no catálogo._ | "item", "produto" solto |
-| Cart | _Cesta de compras de um usuário antes do checkout._ | "carrinho", "basket" |
-| Order | _Pedido confirmado a partir de um cart no checkout._ | "compra", "pedido" solto |
+| Product | _Item for sale in the catalog._ | "item" |
+| Cart | _A user's shopping basket before checkout._ | "basket" |
+| Order | _A confirmed order created from a cart at checkout._ | "purchase" |

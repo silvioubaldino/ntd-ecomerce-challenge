@@ -1,21 +1,21 @@
 ---
 id: ARCH
 type: architecture
-title: Visão de arquitetura (C4 vivo)
+title: Architecture overview (living C4)
 status: approved
 updated: 2026-07-08
 parents: []
 related: []
 ---
 
-# Visão de arquitetura (C4 — contexto + containers)
+# Architecture overview (C4 — context + containers)
 
-> **Documento vivo.** Retrata a topologia **vigente** do monorepo: quais partes existem e
-> como se conectam. Atualize na **mesma edição** que adiciona/remove uma parte ou
-> integração (ver `conventions.md` §A.6 e §A.8). Nomes em **inglês** (atravessam para o
-> código).
+> **Living document.** Depicts the **current** topology of the monorepo: which parts
+> exist and how they connect. Update it in the **same edit** that adds/removes a part
+> or integration (see `conventions.md` §A.6 and §A.8). Names in **English** (they carry
+> through to the code).
 
-## Diagrama (container view)
+## Diagram (container view)
 
 ```mermaid
 flowchart TB
@@ -23,8 +23,8 @@ flowchart TB
 
     subgraph monorepo[Monorepo]
         web["web<br/>(frontend)"]
-        api["api<br/>(backend · dono dos contratos)"]
-        context["context<br/>(tipos/domínio compartilhados)"]
+        api["api<br/>(backend · owns the contracts)"]
+        context["context<br/>(shared types/domain)"]
     end
 
     db[("Database<br/>(Postgres · local)")]
@@ -32,18 +32,18 @@ flowchart TB
     user -->|HTTP| web
     web -->|HTTP · REST/JSON| api
     api -->|SQL| db
-    web -.->|importa tipos| context
-    api -.->|importa tipos| context
+    web -.->|imports types| context
+    api -.->|imports types| context
 ```
 
-## Containers (legenda)
+## Containers (legend)
 
-| Container | Papel | Stack (preencher) |
-|-----------|-------|-------------------|
-| **web** | Frontend; consome a `api` | _<framework>_ |
-| **api** | Backend; regras de negócio e dono dos contratos | _<framework>_ |
-| **context** | Tipos e domínio compartilhados entre `web` e `api` | _<TypeScript, etc.>_ |
-| **Database** | Persistência do domínio (local) | Postgres (local) |
+| Container | Role | Stack (fill in) |
+|-----------|------|-------------------|
+| **web** | Frontend; consumes the `api` | _<framework>_ |
+| **api** | Backend; business rules and owner of the contracts | _<framework>_ |
+| **context** | Types and domain shared between `web` and `api` | _<TypeScript, etc.>_ |
+| **Database** | Domain persistence (local) | Postgres (local) |
 
-> Substitua as stacks pelas reais ao definir o projeto. Diagrama e tabela devem ficar em
-> sincronia — se divergirem, **a tabela vence**.
+> Replace the stacks with the real ones once the project is defined. Diagram and table
+> must stay in sync — if they diverge, **the table wins**.

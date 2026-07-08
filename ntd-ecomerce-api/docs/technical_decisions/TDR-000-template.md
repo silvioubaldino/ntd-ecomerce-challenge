@@ -9,18 +9,18 @@ related: []
 superseded_by: null
 ---
 
-# TDR-NNN: <decisão técnica local>
+# TDR-NNN: <local technical decision>
 
-> Append-only: nunca reescreva. Decisão nova = novo TDR que substitui este
-> (`superseded_by`). Use TDR para decisões internas **deste serviço** (api). Se a
-> decisão afeta o outro serviço (contrato/protocolo), ela é um **AYD**
-> (`ntd-ecomerce-context/docs/design/`), não um TDR.
+> Append-only: never rewrite. A new decision = a new TDR that supersedes this one
+> (`superseded_by`). Use TDR for decisions internal **to this service** (api). If the
+> decision affects the other service (contract/protocol), it's an **AYD**
+> (`ntd-ecomerce-context/docs/design/`), not a TDR.
 
-## Contexto
-_Que força técnica local exige a decisão?_
+## Context
+_What local technical force requires this decision?_
 
-## Decisão
-_O que foi decidido._
+## Decision
+_What was decided._
 
-## Alternativas & trade-offs
+## Alternatives & trade-offs
 -

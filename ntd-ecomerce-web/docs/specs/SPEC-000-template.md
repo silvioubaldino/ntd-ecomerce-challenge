@@ -3,40 +3,41 @@ id: SPEC-NNN
 type: spec
 status: draft              # draft → done
 updated: 2026-07-08
-parents: [AYD-NNN@context]  # obrigatório: o AYD que originou esta spec
+parents: [AYD-NNN@context]  # required: the AYD that originated this spec
 related: [GLO]
 ---
 
-# SPEC-NNN: <feature> — o quê + como
+# SPEC-NNN: <feature> — what + how
 
-> Um arquivo só: **o que** fazer e **como** fazer. Escreva **direto e objetivo** — sem
-> enrolação, sem repetir o AYD. Implementa o contrato do AYD; não o redefine.
+> A single file: **what** to do and **how** to do it. Write it **direct and
+> objective** — no filler, don't repeat the AYD. Implements the AYD's contract; doesn't
+> redefine it.
 
-## O quê (objetivo)
-_Uma frase: o que esta feature entrega, conforme o AYD._
+## What (goal)
+_One sentence: what this feature delivers, per the AYD._
 
-## Critérios de aceite
+## Acceptance criteria
 ```gherkin
-Cenário: <nome>
-  Dado <contexto>
-  Quando <ação>
-  Então <resultado observável>
+Scenario: <name>
+  Given <context>
+  When <action>
+  Then <observable result>
 ```
 
-## Como (abordagem)
-_2–4 linhas: a estratégia técnica. Só o essencial._
+## How (approach)
+_2–4 lines: the technical strategy. Only the essentials._
 
-## Passos
+## Steps
 1.
 2.
 3.
 
-## Arquivos afetados
+## Affected files
 - `ntd-ecomerce-web/…`
 
-## Testes
-- **Aceite:** um teste por cenário Gherkin acima.
-- **Unit:** _<pontos críticos>_.
+## Tests
+- **Acceptance:** one test per Gherkin scenario above.
+- **Unit:** _<critical points>_.
 
 ## Checklist
 - [ ]

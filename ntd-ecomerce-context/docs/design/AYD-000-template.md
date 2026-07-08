@@ -4,38 +4,38 @@ type: design
 status: draft
 updated: 2026-07-08
 parents: [REQ-01]
-children: []          # SPEC gerada, ex.: [SPEC-001@api, SPEC-001@web]
+children: []          # SPECs generated, e.g.: [SPEC-001@api, SPEC-001@web]
 related: [GLO]
 ---
 
 # AYD-NNN: <feature>
 
-> Análise & Design de uma feature. Decide quais partes toca (`api`/`web`), os **contratos**
-> entre elas, o modelo de domínio e o fluxo. É a fonte dos contratos — a SPEC implementa,
-> não redefine. Seja objetivo.
+> Analysis & Design of a feature. Decides which parts it touches (`api`/`web`), the
+> **contracts** between them, the domain model, and the flow. It is the source of the
+> contracts — the SPEC implements, it doesn't redefine. Be objective.
 
-## Objetivo
-_Que requisito (REQ) esta feature atende e qual o resultado esperado._
+## Goal
+_Which requirement (REQ) does this feature meet, and what's the expected outcome._
 
-## Partes afetadas
-| Parte | Papel nesta feature | SPEC gerada |
+## Affected parts
+| Part | Role in this feature | Generated SPEC |
 |-------|---------------------|-------------|
-| api | _expõe/serve…_ | SPEC-NNN@api |
-| web | _consome/exibe…_ | SPEC-NNN@web |
+| api | _exposes/serves…_ | SPEC-NNN@api |
+| web | _consumes/displays…_ | SPEC-NNN@web |
 
-## Contrato (fonte da verdade)
-_Endpoints, payloads, erros. Campos/enums em inglês (usar termos do GLO)._
+## Contract (source of truth)
+_Endpoints, payloads, errors. Fields/enums in English (use GLO terms)._
 ```
 POST /cart/items
 req:  { productId: string, quantity: number }
 res:  { cartId: string, items: [...] }
-erros: [ 404 product_not_found, 422 invalid_quantity ]
+errors: [ 404 product_not_found, 422 invalid_quantity ]
 ```
 
-## Modelo de domínio afetado
-_Entidades/campos (termos do glossário)._
+## Affected domain model
+_Entities/fields (glossary terms)._
 
-## Fluxo
+## Flow
 ```mermaid
 sequenceDiagram
     participant web
@@ -46,5 +46,5 @@ sequenceDiagram
     api-->>web: 200 cart
 ```
 
-## Fora de escopo / questões em aberto
+## Out of scope / open questions
 -
