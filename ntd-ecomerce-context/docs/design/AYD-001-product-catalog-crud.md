@@ -4,7 +4,7 @@ type: design
 status: approved
 updated: 2026-07-08
 parents: [RF-01]
-children: [SPEC-001@api]          # SPEC-001@web pending
+children: [SPEC-001@api, SPEC-001@web]
 related: [GLO]
 ---
 

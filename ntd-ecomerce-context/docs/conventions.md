@@ -106,3 +106,6 @@ as the canonical source. Current topology → `architecture.md`; a feature's flo
 - **Commits:** [Conventional Commits](https://www.conventionalcommits.org); reference the
   ID (SPEC/AYD/TDR) when applicable.
 - **PRs:** link to the SPEC; one line in the corresponding part's `changelog.md` per PR.
+- **Changelog lines:** state **what** shipped, not **how** — no stack/library names,
+  file paths, or implementation detail (that lives in the SPEC/TDR/PR). Keep it to one
+  short, general sentence.
