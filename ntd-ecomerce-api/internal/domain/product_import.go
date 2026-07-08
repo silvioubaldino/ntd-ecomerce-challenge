@@ -16,6 +16,16 @@ var (
 	csvImportColumns = []string{"name", "sku", "description", "category", "price", "stock", "weight_kg"}
 )
 
+const (
+	colName = iota
+	colSKU
+	colDescription
+	colCategory
+	colPrice
+	colStock
+	colWeightKg
+)
+
 type ImportSummary struct {
 	Total    int `json:"total"`
 	Imported int `json:"imported"`
@@ -49,22 +59,22 @@ func ParseProductCSVRecord(record []string) (ProductInput, map[string]string) {
 	record = padRecord(record, len(csvImportColumns))
 	problems := map[string]string{}
 
-	name := strings.TrimSpace(record[0])
-	sku := strings.TrimSpace(record[1])
-	description := strings.TrimSpace(record[2])
-	category := strings.TrimSpace(record[3])
+	name := strings.TrimSpace(record[colName])
+	sku := strings.TrimSpace(record[colSKU])
+	description := strings.TrimSpace(record[colDescription])
+	category := strings.TrimSpace(record[colCategory])
 
-	price, err := decimal.NewFromString(strings.TrimSpace(record[4]))
+	price, err := decimal.NewFromString(strings.TrimSpace(record[colPrice]))
 	if err != nil {
 		problems["price"] = "must_be_non_negative_decimal"
 	}
 
-	stock, err := strconv.Atoi(strings.TrimSpace(record[5]))
+	stock, err := strconv.Atoi(strings.TrimSpace(record[colStock]))
 	if err != nil {
 		problems["stock"] = "must_be_non_negative_integer"
 	}
 
-	weightKg, err := decimal.NewFromString(strings.TrimSpace(record[6]))
+	weightKg, err := decimal.NewFromString(strings.TrimSpace(record[colWeightKg]))
 	if err != nil {
 		problems["weight_kg"] = "must_be_non_negative_decimal"
 	}
