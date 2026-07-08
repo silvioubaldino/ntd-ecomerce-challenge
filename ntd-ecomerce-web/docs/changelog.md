@@ -19,5 +19,6 @@ CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
+- Implemented SPEC-001 (Product catalog CRUD UI: list, create, edit, delete); service now runs via Docker.
 - Added SPEC-001@web (Product catalog CRUD UI) and its supporting technical decisions. [#05](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/5)
 - Service scaffold initialized (specs, technical_decisions).

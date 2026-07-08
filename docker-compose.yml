@@ -27,5 +27,13 @@ services:
       db:
         condition: service_healthy
 
+  web:
+    build:
+      context: ./ntd-ecomerce-web
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
 volumes:
   pgdata:

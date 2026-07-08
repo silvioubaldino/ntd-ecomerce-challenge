@@ -1,7 +1,7 @@
 ---
 id: SPEC-001
 type: spec
-status: draft
+status: done
 updated: 2026-07-08
 parents: [AYD-001@context]
 related: [GLO, TDR-001, TDR-002, TDR-003, TDR-004, TDR-005]
@@ -137,11 +137,11 @@ envelope (`validation_error` details, `sku_already_exists`) onto field errors
   typed `ApiError` with `code`/`details`); query-key invalidation after mutations.
 
 ## Checklist
-- [ ] SPA scaffold boots in dev; `/api` proxy reaches the api (no CORS)
-- [ ] `docker compose up` serves web via nginx with SPA fallback + `/api` proxy
-- [ ] List paginates and renders decimals from strings (no float rounding)
-- [ ] Create/edit send ProductInput with decimals as strings; full replace on PUT
-- [ ] `422` details and `409 sku_already_exists` mapped to field errors; `404` handled
-- [ ] Delete removes the Product; generic api/network errors are visible and recoverable
-- [ ] All acceptance scenarios covered by passing tests; lint clean
-- [ ] Changelog line added; spec `done`; AYD-001 children include SPEC-001@web
+- [x] SPA scaffold boots in dev; `/api` proxy reaches the api (no CORS)
+- [x] `docker compose up` serves web via nginx with SPA fallback + `/api` proxy
+- [x] List paginates and renders decimals from strings (no float rounding)
+- [x] Create/edit send ProductInput with decimals as strings; full replace on PUT
+- [x] `422` details and `409 sku_already_exists` mapped to field errors; `404` handled
+- [x] Delete removes the Product; generic api/network errors are visible and recoverable
+- [x] All acceptance scenarios covered by passing tests; lint clean
+- [x] Changelog line added; spec `done`; AYD-001 children include SPEC-001@web
