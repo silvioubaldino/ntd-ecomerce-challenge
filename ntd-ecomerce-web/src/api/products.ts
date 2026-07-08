@@ -1,8 +1,16 @@
 import { apiClient } from "./client";
 import type { Product, ProductInput, ProductList } from "./types";
 
-export function listProducts(page: number, pageSize = 20): Promise<ProductList> {
-  return apiClient.get<ProductList>(`/products?page=${page}&page_size=${pageSize}`);
+export function listProducts(
+  page: number,
+  pageSize = 20,
+  q?: string,
+): Promise<ProductList> {
+  const trimmedQ = q?.trim();
+  const query = `page=${page}&page_size=${pageSize}${
+    trimmedQ ? `&q=${encodeURIComponent(trimmedQ)}` : ""
+  }`;
+  return apiClient.get<ProductList>(`/products?${query}`);
 }
 
 export function getProduct(id: string): Promise<Product> {

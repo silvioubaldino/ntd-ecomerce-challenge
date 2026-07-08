@@ -11,6 +11,7 @@ import type { ProductInput } from "../../api/types";
 
 const productKeys = {
   list: (page: number) => ["products", "list", page] as const,
+  search: (q: string, page: number) => ["products", "search", q.trim(), page] as const,
   detail: (id: string) => ["products", "detail", id] as const,
 };
 
@@ -18,6 +19,14 @@ export function useProducts(page: number) {
   return useQuery({
     queryKey: productKeys.list(page),
     queryFn: () => listProducts(page),
+  });
+}
+
+export function useProductSearch(q: string, page: number) {
+  return useQuery({
+    queryKey: productKeys.search(q, page),
+    queryFn: () => listProducts(page, 20, q),
+    placeholderData: (previousData) => previousData,
   });
 }
 

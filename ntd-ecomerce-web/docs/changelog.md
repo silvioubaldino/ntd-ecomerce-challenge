@@ -19,6 +19,7 @@ CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
+- Implemented SPEC-003 (Store product search UI: search box with URL-synced term, debounced queries, and paginated results). [#13](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/13)
 - Implemented SPEC-002 (Product CSV bulk import UI: upload, import summary, rejected-rows report, blank template download). [#10](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/10)
 - Redesigned the catalog UI. [#07](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/7)
 - Implemented SPEC-001 (Product catalog CRUD UI: list, create, edit, delete); service now runs via Docker. [#06](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/6)

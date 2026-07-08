@@ -1,7 +1,7 @@
 ---
 id: SPEC-003
 type: spec
-status: draft
+status: done
 updated: 2026-07-08
 parents: [AYD-003@context]
 related: [GLO, SPEC-001]
@@ -116,11 +116,11 @@ Skeleton, EmptyState), but without operator columns/actions (edit, delete, impor
   once after the delay); `useProductSearch` query key varies by `q` and `page`.
 
 ## Checklist
-- [ ] `/store` reachable from the nav, distinct from the operator `/products` catalog
-- [ ] Blank `q` renders the unfiltered catalog; a term renders matches
-- [ ] Zero matches renders an empty state, not an error
-- [ ] Pagination walks the filtered set using `pagination.total` from the response
-- [ ] `q` is reflected in and readable from the URL (shareable, back-button friendly)
-- [ ] Search input is debounced (~300ms) and/or submits on Enter
-- [ ] All acceptance scenarios covered by passing tests; lint clean
-- [ ] Changelog line added; spec `done`; AYD-003 children include SPEC-003@web
+- [x] `/store` reachable from the nav, distinct from the operator `/products` catalog
+- [x] Blank `q` renders the unfiltered catalog; a term renders matches
+- [x] Zero matches renders an empty state, not an error
+- [x] Pagination walks the filtered set using `pagination.total` from the response
+- [x] `q` is reflected in and readable from the URL (shareable, back-button friendly)
+- [x] Search input is debounced (~300ms) and/or submits on Enter
+- [x] All acceptance scenarios covered by passing tests; lint clean
+- [x] Changelog line added; spec `done`; AYD-003 children include SPEC-003@web
