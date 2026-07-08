@@ -12,6 +12,7 @@ var ErrInvalidPagination = errors.New("invalid pagination")
 type Page struct {
 	Number int
 	Size   int
+	Query  string
 }
 
 func DefaultPage() Page {

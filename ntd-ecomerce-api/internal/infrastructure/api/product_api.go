@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"ntd-ecomerce-api/internal/domain"
 
@@ -198,6 +199,8 @@ func (h ProductHandler) parsePage(c *gin.Context) (domain.Page, error) {
 		}
 		page.Size = n
 	}
+
+	page.Query = strings.TrimSpace(c.Query("q"))
 
 	if err := page.Validate(); err != nil {
 		return domain.Page{}, domain.WrapInvalidInput(err, "invalid pagination")
