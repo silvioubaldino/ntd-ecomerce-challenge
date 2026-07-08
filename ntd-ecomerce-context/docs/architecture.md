@@ -40,10 +40,10 @@ flowchart TB
 
 | Container | Role | Stack (fill in) |
 |-----------|------|-------------------|
-| **web** | Frontend; consumes the `api` | _<framework>_ |
-| **api** | Backend; business rules and owner of the contracts | _<framework>_ |
-| **context** | Types and domain shared between `web` and `api` | _<TypeScript, etc.>_ |
-| **Database** | Domain persistence (local) | Postgres (local) |
+| **web** | Frontend; consumes the `api` | _<framework — TBD>_ |
+| **api** | Backend; business rules and owner of the contracts | Go 1.25 · Gin · GORM · golang-migrate (TDR-001..004@api) |
+| **context** | Types and domain shared between `web` and `api` | Markdown contracts (AYDs); typed client for `web` TBD |
+| **Database** | Domain persistence (local) | Postgres 17 (Docker) |
 
 > Replace the stacks with the real ones once the project is defined. Diagram and table
 > must stay in sync — if they diverge, **the table wins**.
