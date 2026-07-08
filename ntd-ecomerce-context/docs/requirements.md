@@ -31,9 +31,8 @@ related: [GLO]
 - RN-02: CSV import must validate each row and reject/report rows with invalid data (missing required fields, non-numeric `price`/`stock`/`weight_kg`, negative `stock`, malformed or duplicate `sku`, or unsafe content) rather than silently importing them — the reference sample file intentionally includes such cases for validation testing.
 
 ## MVP scope
-- **In:** Product CRUD (API + UI); CSV bulk import with validation; Product search (API + UI); Product purchase with simulated payment (API + UI); Docker-based local deployment.
-- **Out (for now):** Real payment provider integration (payment is simulated per RF-04); user accounts/authentication (purchase flow is guest-only for the MVP).
-- **Pending decision:** whether Purchase goes through a Cart (multi-item) or is a direct per-Product purchase — the glossary below already defines both Cart and Order, but which flow the MVP uses hasn't been decided yet. Resolve in the AYD for the purchase flow before implementation.
+- **In:** Product CRUD (API + UI); CSV bulk import with validation; Product search (API + UI); direct Product purchase (no Cart) with simulated payment (API + UI), resulting in an Order; Docker-based local deployment.
+- **Out (for now):** Real payment provider integration (payment is simulated per RF-04); user accounts/authentication (purchase flow is guest-only for the MVP); Cart (multi-item basket) — purchase is direct, per-Product.
 
 ---
 
@@ -50,5 +49,4 @@ ambiguity turns into a bug.
 |------------|-----------|--------------------|
 | Product | _Item for sale in the catalog._ | "item" |
 | SKU | _Unique code identifying a Product (Stock Keeping Unit)._ | "product code" |
-| Cart | _A user's shopping basket before checkout._ | "basket" |
-| Order | _A confirmed order created from a cart at checkout._ | "purchase" |
+| Order | _A confirmed order created when a customer purchases one or more Products._ | "purchase" |
