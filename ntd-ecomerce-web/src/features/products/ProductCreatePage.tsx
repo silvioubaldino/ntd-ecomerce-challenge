@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { PageHeader } from "../../components/PageHeader";
 import { useCreateProduct } from "./hooks";
 import { ProductForm } from "./ProductForm";
 import type { ProductFormValues } from "./schema";
@@ -13,8 +14,12 @@ export function ProductCreatePage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-gray-900">New Product</h1>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title="New Product"
+        description="Add a product to the catalog."
+        backTo={{ to: "/products", label: "Back to products" }}
+      />
       <ProductForm onSubmit={handleSubmit} submitLabel="Create" />
     </div>
   );

@@ -1,6 +1,12 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "../../api/types";
 import { ErrorBanner } from "../../components/ErrorBanner";
+import { PageHeader } from "../../components/PageHeader";
+import { ButtonLink } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { Skeleton } from "../../components/ui/Skeleton";
+import { BoxIcon } from "../../components/ui/icons";
 import { useProduct, useUpdateProduct } from "./hooks";
 import { ProductForm } from "./ProductForm";
 import type { ProductFormValues } from "./schema";
@@ -16,28 +22,70 @@ export function ProductEditPage() {
     navigate("/products");
   }
 
+  const header = (
+    <PageHeader
+      title="Edit Product"
+      description="Update this product's details."
+      backTo={{ to: "/products", label: "Back to products" }}
+    />
+  );
+
   if (productQuery.isLoading) {
-    return <p className="text-sm text-gray-500">Loading…</p>;
+    return (
+      <div className="flex flex-col gap-6">
+        {header}
+        <Card className="max-w-2xl p-6 sm:p-8" aria-label="Loading product" role="status">
+          <div className="flex flex-col gap-5">
+            <Skeleton className="h-4 w-32" />
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Skeleton className="h-10" />
+              <Skeleton className="h-10" />
+            </div>
+            <Skeleton className="h-20" />
+            <Skeleton className="h-10" />
+          </div>
+        </Card>
+      </div>
+    );
   }
 
   if (productQuery.isError) {
     const error = productQuery.error;
     if (error instanceof ApiError && error.code === "product_not_found") {
-      return <p className="text-sm text-gray-700">Product not found.</p>;
+      return (
+        <div className="flex flex-col gap-6">
+          {header}
+          <Card className="max-w-2xl">
+            <EmptyState
+              icon={<BoxIcon className="h-7 w-7" />}
+              title="Product not found."
+              description="It may have been removed from the catalog."
+              action={
+                <ButtonLink to="/products" variant="secondary">
+                  Back to products
+                </ButtonLink>
+              }
+            />
+          </Card>
+        </div>
+      );
     }
     return (
-      <ErrorBanner
-        message="Could not load this product."
-        onRetry={() => productQuery.refetch()}
-      />
+      <div className="flex flex-col gap-6">
+        {header}
+        <ErrorBanner
+          message="Could not load this product."
+          onRetry={() => productQuery.refetch()}
+        />
+      </div>
     );
   }
 
   const product = productQuery.data!;
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold text-gray-900">Edit Product</h1>
+    <div className="flex flex-col gap-6">
+      {header}
       <ProductForm
         defaultValues={{
           name: product.name,
