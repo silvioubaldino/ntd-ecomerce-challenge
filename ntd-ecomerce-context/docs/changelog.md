@@ -29,6 +29,7 @@ that lives in the SPEC/TDR/PR); reference the PR when useful. See CONV §B.3.
 
 ## Unreleased
 
+- Created AYD-002 (Product CSV bulk import): upload endpoint contract and per-row validation/reporting rules (RN-01/RN-02), reusing the AYD-001 Product model. [#08](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/8)
 - Chose and documented the web stack; linked AYD-001 to SPEC-001@web. [#05](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/5)
 - Chose and documented the api/db stack; linked AYD-001 to SPEC-001@api. [#03](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/3)
 - Created AYD-001 (Product catalog CRUD): first api↔web contract, Product model, and base REST conventions. [#02](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/2)
