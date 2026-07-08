@@ -13,8 +13,11 @@ Changes to the **shared** docs (requirements, design, architecture) go in
 `ntd-ecomerce-context`'s changelog.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) +
-[SemVer](https://semver.org/spec/v2.0.0.html). Most recent on top; 1 line per PR.
+[SemVer](https://semver.org/spec/v2.0.0.html). Most recent on top; 1 line per PR,
+stating **what** shipped — no stack/library names or implementation detail (see
+CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
+- Added SPEC-001@web (Product catalog CRUD UI) and its supporting technical decisions. [#05](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/5)
 - Service scaffold initialized (specs, technical_decisions).
