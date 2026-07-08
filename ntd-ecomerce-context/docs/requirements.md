@@ -2,7 +2,7 @@
 id: REQ-01
 type: requirements
 title: Requirements and glossary
-status: draft
+status: approved
 updated: 2026-07-08
 parents: []
 children: []
