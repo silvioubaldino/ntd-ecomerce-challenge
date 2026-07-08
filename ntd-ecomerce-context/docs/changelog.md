@@ -29,7 +29,7 @@ that lives in the SPEC/TDR/PR); reference the PR when useful. See CONV §B.3.
 
 ## Unreleased
 
-- Added multi-item purchase to the scope: a guest Cart (AYD-004) and Checkout & Order (AYD-005), with the related requirements and glossary terms.
+- Added multi-item purchase to the scope: a guest Cart (AYD-004) and Checkout & Order (AYD-005), with the related requirements and glossary terms. [#15](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/15)
 - Created AYD-003 (Product catalog search): extends `GET /products` with an optional free-text `q` filter over Product text fields, reusing the AYD-001 list/pagination contract — no new endpoint. [#11](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/11)
 - Updated AYD-002 (Product CSV bulk import): added a downloadable blank CSV template to the web import UX (static asset, no new api endpoint). [#09](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/9)
 - Created AYD-002 (Product CSV bulk import): upload endpoint contract and per-row validation/reporting rules (RN-01/RN-02), reusing the AYD-001 Product model. [#08](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/8)
