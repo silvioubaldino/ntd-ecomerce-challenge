@@ -2,7 +2,10 @@ package usecase
 
 import (
 	"context"
+	"encoding/csv"
+	"errors"
 	"fmt"
+	"io"
 	"strings"
 
 	"ntd-ecomerce-api/internal/domain"
@@ -83,4 +86,56 @@ func (u *Product) DeleteOne(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (u *Product) Import(ctx context.Context, r io.Reader) (domain.ImportReport, error) {
+	reader := csv.NewReader(r)
+	reader.FieldsPerRecord = -1
+
+	header, err := reader.Read()
+	if err != nil {
+		return domain.ImportReport{}, domain.WrapValidationCode(err, "invalid_header", "csv header is missing or unreadable")
+	}
+	if err := domain.ValidateCSVHeader(header); err != nil {
+		return domain.ImportReport{}, domain.WrapValidationCode(err, "invalid_header", "csv header does not match the expected columns")
+	}
+
+	report := domain.ImportReport{Rejected: []domain.RejectedRow{}}
+
+	rowNum := 0
+	for {
+		record, err := reader.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return domain.ImportReport{}, fmt.Errorf("reading csv row %d: %w", rowNum+1, err)
+		}
+		rowNum++
+		report.Summary.Total++
+
+		input, problems := domain.ParseProductCSVRecord(record)
+		if len(problems) > 0 {
+			report.Summary.Rejected++
+			report.Rejected = append(report.Rejected, domain.RejectedRow{Row: rowNum, SKU: input.SKU, Errors: problems})
+			continue
+		}
+
+		if _, err := u.repo.Add(ctx, input.ToProduct()); err != nil {
+			if errors.Is(err, domain.ErrConflict) {
+				report.Summary.Rejected++
+				report.Rejected = append(report.Rejected, domain.RejectedRow{
+					Row:    rowNum,
+					SKU:    input.SKU,
+					Errors: map[string]string{"sku": "duplicate_sku"},
+				})
+				continue
+			}
+			return domain.ImportReport{}, fmt.Errorf("importing csv row %d: %w", rowNum, err)
+		}
+
+		report.Summary.Imported++
+	}
+
+	return report, nil
 }

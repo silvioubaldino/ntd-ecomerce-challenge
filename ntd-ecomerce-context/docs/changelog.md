@@ -3,7 +3,7 @@ id: CHANGELOG-context
 type: changelog
 title: Changelog — context
 status: approved
-updated: 2026-07-08
+updated: 2026-07-09
 ---
 
 # Changelog — context
@@ -29,6 +29,7 @@ that lives in the SPEC/TDR/PR); reference the PR when useful. See CONV §B.3.
 
 ## Unreleased
 
+- Updated AYD-002 (Product CSV bulk import): added a downloadable blank CSV template to the web import UX (static asset, no new api endpoint). [#09](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/9)
 - Created AYD-002 (Product CSV bulk import): upload endpoint contract and per-row validation/reporting rules (RN-01/RN-02), reusing the AYD-001 Product model. [#08](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/8)
 - Chose and documented the web stack; linked AYD-001 to SPEC-001@web. [#05](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/5)
 - Chose and documented the api/db stack; linked AYD-001 to SPEC-001@api. [#03](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/3)

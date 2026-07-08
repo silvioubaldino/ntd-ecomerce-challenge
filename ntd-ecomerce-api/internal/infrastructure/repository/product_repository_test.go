@@ -52,7 +52,7 @@ func TestProductRepository_Add(t *testing.T) {
 
 	tests := map[string]struct {
 		mockSetup func(mock sqlmock.Sqlmock)
-		expected expected
+		expected  expected
 	}{
 		"should return created product when insert succeeds": {
 			mockSetup: func(mock sqlmock.Sqlmock) {
@@ -98,7 +98,7 @@ func TestProductRepository_FindByID(t *testing.T) {
 
 	tests := map[string]struct {
 		mockSetup func(mock sqlmock.Sqlmock)
-		expected expected
+		expected  expected
 	}{
 		"should return product when it exists": {
 			mockSetup: func(mock sqlmock.Sqlmock) {
@@ -137,7 +137,7 @@ func TestProductRepository_Delete(t *testing.T) {
 
 	tests := map[string]struct {
 		mockSetup func(mock sqlmock.Sqlmock)
-		expected expected
+		expected  expected
 	}{
 		"should succeed when a row is deleted": {
 			mockSetup: func(mock sqlmock.Sqlmock) {
@@ -175,7 +175,7 @@ func TestProductRepository_Update(t *testing.T) {
 
 	tests := map[string]struct {
 		mockSetup func(mock sqlmock.Sqlmock)
-		expected expected
+		expected  expected
 	}{
 		"should return updated product when the row exists": {
 			mockSetup: func(mock sqlmock.Sqlmock) {
