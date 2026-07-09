@@ -1,6 +1,15 @@
 import { NavLink, Link, Outlet } from "react-router-dom";
 import { cn } from "../lib/cn";
-import { LogoMark, ShieldIcon } from "./ui/icons";
+import { useCart } from "../features/cart/hooks";
+import { CartIcon, LogoMark, ShieldIcon } from "./ui/icons";
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "rounded-lg px-3 py-2 text-sm font-medium transition",
+    isActive
+      ? "bg-brand-50 text-brand-800"
+      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+  );
 
 export function Layout() {
   return (
@@ -15,33 +24,13 @@ export function Layout() {
           </Link>
 
           <div className="flex items-center gap-1">
-            <NavLink
-              to="/products"
-              end
-              className={({ isActive }) =>
-                cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition",
-                  isActive
-                    ? "bg-brand-50 text-brand-800"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-                )
-              }
-            >
+            <NavLink to="/products" end className={navLinkClass}>
               Catalog
             </NavLink>
-            <NavLink
-              to="/store"
-              className={({ isActive }) =>
-                cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition",
-                  isActive
-                    ? "bg-brand-50 text-brand-800"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-                )
-              }
-            >
+            <NavLink to="/store" className={navLinkClass}>
               Store
             </NavLink>
+            <CartNavLink />
           </div>
         </nav>
       </header>
@@ -60,5 +49,28 @@ export function Layout() {
         </div>
       </footer>
     </div>
+  );
+}
+
+function CartNavLink() {
+  const cartQuery = useCart();
+  const count =
+    cartQuery.data?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+
+  return (
+    <NavLink to="/cart" className={navLinkClass} aria-label="Cart">
+      <span className="inline-flex items-center gap-1.5">
+        <CartIcon className="h-4 w-4" />
+        Cart
+        {count > 0 && (
+          <span
+            aria-label={`${count} items in cart`}
+            className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-brand-700 px-1.5 py-0.5 text-xs font-semibold leading-none text-white"
+          >
+            {count}
+          </span>
+        )}
+      </span>
+    </NavLink>
   );
 }
