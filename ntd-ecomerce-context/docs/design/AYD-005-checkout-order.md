@@ -2,9 +2,9 @@
 id: AYD-005
 type: design
 status: draft
-updated: 2026-07-08
+updated: 2026-07-09
 parents: [RF-04]
-children: []          # SPECs to be generated later: [SPEC-005@api, SPEC-005@web]
+children: [SPEC-005@api, SPEC-005@web]
 related: [GLO, AYD-001, AYD-004]
 ---
 
