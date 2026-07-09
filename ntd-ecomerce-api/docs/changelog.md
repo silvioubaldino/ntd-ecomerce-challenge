@@ -19,6 +19,7 @@ CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
+- Implemented SPEC-004 - Cart resource: create a guest cart, add/increment, set and remove items with stock-checked quantities, returning line subtotals and a cart total.
 - Implemented SPEC-003 - Product catalog search, extending the product list with an optional free-text filter. [#14](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/14)
 - Implemented SPEC-002 - Product bulk import from CSV, with per-row validation and rejection reporting. [#09](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/9)
 - Implemented SPEC-001 - Product catalog CRUD [#04](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/4)

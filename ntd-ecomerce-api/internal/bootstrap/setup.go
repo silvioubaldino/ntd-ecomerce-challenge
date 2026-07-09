@@ -1,6 +1,7 @@
 package bootstrap
 
 import (
+	"ntd-ecomerce-api/internal/bootstrap/cart"
 	"ntd-ecomerce-api/internal/bootstrap/product"
 	"ntd-ecomerce-api/internal/bootstrap/registry"
 
@@ -13,4 +14,5 @@ func SetupComponents(r *gin.Engine, db *gorm.DB) {
 
 	// here should be configured the authentication middleware
 	product.Setup(r, reg)
+	cart.Setup(r, reg)
 }
