@@ -172,7 +172,7 @@ describe("CartPage", () => {
     await screen.findByText("Widget");
 
     expect(
-      screen.getByRole("button", { name: /proceed to checkout/i }),
-    ).toBeInTheDocument();
+      screen.getByRole("link", { name: /proceed to checkout/i }),
+    ).toHaveAttribute("href", "/checkout");
   });
 });

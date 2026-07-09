@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { Cart, CartItem, Product } from "../api/types";
+import type { Cart, CartItem, Order, OrderItem, Product } from "../api/types";
 
 export function makeProduct(overrides: Partial<Product> = {}): Product {
   return {
@@ -36,6 +36,31 @@ export function makeCart(overrides: Partial<Cart> = {}): Cart {
     total: "0.00",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+export function makeOrderItem(overrides: Partial<OrderItem> = {}): OrderItem {
+  return {
+    product_id: "11111111-1111-1111-1111-111111111111",
+    sku: "WID-001",
+    name: "Widget",
+    unit_price: "19.90",
+    quantity: 1,
+    subtotal: "19.90",
+    ...overrides,
+  };
+}
+
+export function makeOrder(overrides: Partial<Order> = {}): Order {
+  return {
+    id: "order-1",
+    status: "confirmed",
+    customer: { name: "Ada Lovelace", email: "ada@example.com" },
+    items: [makeOrderItem()],
+    total: "19.90",
+    payment: { method: "simulated", status: "approved" },
+    created_at: "2026-01-01T00:00:00Z",
     ...overrides,
   };
 }
@@ -121,4 +146,26 @@ export const handlers = [
   http.delete("/api/carts/:cartId/items/:productId", ({ params }) =>
     HttpResponse.json(makeCart({ id: params.cartId as string })),
   ),
+
+  // Orders (AYD-005) — permissive defaults; tests override per scenario.
+  http.post("/api/orders", async ({ request }) => {
+    const body = (await request.json()) as {
+      cart_id: string;
+      customer: { name: string; email: string };
+    };
+    return HttpResponse.json(
+      makeOrder({ customer: body.customer }),
+      { status: 201 },
+    );
+  }),
+
+  http.get("/api/orders/:orderId", ({ params }) => {
+    if (params.orderId === "missing") {
+      return HttpResponse.json(
+        { error: { code: "order_not_found", message: "order not found" } },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(makeOrder({ id: params.orderId as string }));
+  }),
 ];

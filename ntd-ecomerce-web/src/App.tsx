@@ -6,6 +6,8 @@ import { ProductEditPage } from "./features/products/ProductEditPage";
 import { ProductImportPage } from "./features/products/ProductImportPage";
 import { StoreSearchPage } from "./features/products/StoreSearchPage";
 import { CartPage } from "./features/cart/CartPage";
+import { CheckoutPage } from "./features/checkout/CheckoutPage";
+import { OrderConfirmationPage } from "./features/checkout/OrderConfirmationPage";
 
 export default function App() {
   return (
@@ -18,6 +20,8 @@ export default function App() {
         <Route path="/products/:id/edit" element={<ProductEditPage />} />
         <Route path="/store" element={<StoreSearchPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/orders/:orderId" element={<OrderConfirmationPage />} />
       </Route>
     </Routes>
   );
