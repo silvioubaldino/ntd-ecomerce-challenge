@@ -94,7 +94,8 @@ func TestProductRepository_Add(t *testing.T) {
 func TestProductRepository_FindAll(t *testing.T) {
 	type (
 		input struct {
-			page domain.Page
+			filter domain.ProductFilter
+			page   domain.Page
 		}
 		expected struct {
 			total int
@@ -102,38 +103,109 @@ func TestProductRepository_FindAll(t *testing.T) {
 		}
 	)
 
+	priceMin := decimal.RequireFromString("20")
+	priceMax := decimal.RequireFromString("50")
+
 	tests := map[string]struct {
 		input     input
 		mockSetup func(mock sqlmock.Sqlmock)
 		expected  expected
 	}{
-		"should not add a WHERE clause and order by created_at desc when query is empty": {
-			input: input{page: domain.Page{Number: 1, Size: 20, Query: ""}},
+		"should not add a WHERE clause and order by created_at desc when filter is empty": {
+			input: input{filter: domain.ProductFilter{}, page: domain.Page{Number: 1, Size: 20}},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(`SELECT count\(\*\) FROM "products"`).
 					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
-				mock.ExpectQuery(`SELECT \* FROM "products" ORDER BY created_at desc`).
+				mock.ExpectQuery(`SELECT \* FROM "products" ORDER BY created_at desc, id asc`).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}).
 						AddRow(fixtureID, "Running Shoes", "RS-001").
 						AddRow(fixtureID, "Blue Shirt", "BS-021"))
 			},
 			expected: expected{total: 2, err: nil},
 		},
-		"should filter case-insensitively over name/sku/description/category and order by name asc when query is present": {
-			input: input{page: domain.Page{Number: 1, Size: 20, Query: "blue"}},
+		"should filter case-insensitively over name/sku/description (not category) and order by name asc when q is present": {
+			input: input{filter: domain.ProductFilter{Query: "blue"}, page: domain.Page{Number: 1, Size: 20}},
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE LOWER\(name\) LIKE \$1 OR LOWER\(sku\) LIKE \$2 OR LOWER\(description\) LIKE \$3 OR LOWER\(category\) LIKE \$4`).
-					WithArgs("%blue%", "%blue%", "%blue%", "%blue%").
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE LOWER\(name\) LIKE \$1 OR LOWER\(sku\) LIKE \$2 OR LOWER\(description\) LIKE \$3`).
+					WithArgs("%blue%", "%blue%", "%blue%").
 					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-				mock.ExpectQuery(`SELECT \* FROM "products" WHERE LOWER\(name\) LIKE \$1 OR LOWER\(sku\) LIKE \$2 OR LOWER\(description\) LIKE \$3 OR LOWER\(category\) LIKE \$4.*ORDER BY name asc`).
-					WithArgs("%blue%", "%blue%", "%blue%", "%blue%", 20).
+				mock.ExpectQuery(`SELECT \* FROM "products" WHERE LOWER\(name\) LIKE \$1 OR LOWER\(sku\) LIKE \$2 OR LOWER\(description\) LIKE \$3.*ORDER BY name asc, id asc`).
+					WithArgs("%blue%", "%blue%", "%blue%", 20).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}).
 						AddRow(fixtureID, "Blue Shirt", "BS-021"))
 			},
 			expected: expected{total: 1, err: nil},
 		},
-		"should return zero total and no rows when query has no matches": {
-			input: input{page: domain.Page{Number: 1, Size: 20, Query: "zzz-nomatch"}},
+		"should add a category equality clause when category is set": {
+			input: input{filter: domain.ProductFilter{Category: "Apparel"}, page: domain.Page{Number: 1, Size: 20}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE LOWER\(category\) = LOWER\(\$1\)`).
+					WithArgs("Apparel").
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+				mock.ExpectQuery(`SELECT \* FROM "products" WHERE LOWER\(category\) = LOWER\(\$1\)`).
+					WithArgs("Apparel", 20).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}).
+						AddRow(fixtureID, "Blue Shirt", "BS-021"))
+			},
+			expected: expected{total: 1, err: nil},
+		},
+		"should add price >= and price <= clauses when price bounds are set": {
+			input: input{filter: domain.ProductFilter{PriceMin: &priceMin, PriceMax: &priceMax}, page: domain.Page{Number: 1, Size: 20}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE price >= \$1 AND price <= \$2`).
+					WithArgs(priceMin, priceMax).
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
+				mock.ExpectQuery(`SELECT \* FROM "products" WHERE price >= \$1 AND price <= \$2`).
+					WithArgs(priceMin, priceMax, 20).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}).
+						AddRow(fixtureID, "Blue Shirt", "BS-021"))
+			},
+			expected: expected{total: 1, err: nil},
+		},
+		"should order by price asc, id asc when sort is price_asc": {
+			input: input{filter: domain.ProductFilter{Sort: domain.ProductSortPriceAsc}, page: domain.Page{Number: 1, Size: 20}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products"`).
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+				mock.ExpectQuery(`SELECT \* FROM "products" ORDER BY price asc, id asc`).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}))
+			},
+			expected: expected{total: 0, err: nil},
+		},
+		"should order by price desc, id asc when sort is price_desc": {
+			input: input{filter: domain.ProductFilter{Sort: domain.ProductSortPriceDesc}, page: domain.Page{Number: 1, Size: 20}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products"`).
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+				mock.ExpectQuery(`SELECT \* FROM "products" ORDER BY price desc, id asc`).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}))
+			},
+			expected: expected{total: 0, err: nil},
+		},
+		"should order by name desc, id asc when sort is name_desc explicitly with a category filter": {
+			input: input{filter: domain.ProductFilter{Category: "Apparel", Sort: domain.ProductSortNameDesc}, page: domain.Page{Number: 1, Size: 20}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE LOWER\(category\) = LOWER\(\$1\)`).
+					WithArgs("Apparel").
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+				mock.ExpectQuery(`SELECT \* FROM "products" WHERE LOWER\(category\) = LOWER\(\$1\).*ORDER BY name desc, id asc`).
+					WithArgs("Apparel", 20).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}))
+			},
+			expected: expected{total: 0, err: nil},
+		},
+		"should order by created_at desc, id asc when sort is newest": {
+			input: input{filter: domain.ProductFilter{Sort: domain.ProductSortNewest}, page: domain.Page{Number: 1, Size: 20}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products"`).
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+				mock.ExpectQuery(`SELECT \* FROM "products" ORDER BY created_at desc, id asc`).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}))
+			},
+			expected: expected{total: 0, err: nil},
+		},
+		"should return zero total and no rows when filter has no matches": {
+			input: input{filter: domain.ProductFilter{Query: "zzz-nomatch"}, page: domain.Page{Number: 1, Size: 20}},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE`).
 					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
@@ -143,7 +215,7 @@ func TestProductRepository_FindAll(t *testing.T) {
 			expected: expected{total: 0, err: nil},
 		},
 		"should return error when counting fails": {
-			input: input{page: domain.Page{Number: 1, Size: 20, Query: ""}},
+			input: input{filter: domain.ProductFilter{}, page: domain.Page{Number: 1, Size: 20}},
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectQuery(`SELECT count\(\*\) FROM "products"`).
 					WillReturnError(assert.AnError)
@@ -157,10 +229,52 @@ func TestProductRepository_FindAll(t *testing.T) {
 			repo, mock := newTestRepo(t)
 			tc.mockSetup(mock)
 
-			list, err := repo.FindAll(context.Background(), tc.input.page)
+			list, err := repo.FindAll(context.Background(), tc.input.filter, tc.input.page)
 
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.Equal(t, tc.expected.total, list.Pagination.Total)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
+func TestProductRepository_FindCategories(t *testing.T) {
+	type expected struct {
+		categories []string
+		err        error
+	}
+
+	tests := map[string]struct {
+		mockSetup func(mock sqlmock.Sqlmock)
+		expected  expected
+	}{
+		"should return distinct non-empty categories ascending": {
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT DISTINCT "category" FROM "products" WHERE TRIM\(category\) <> ''`).
+					WillReturnRows(sqlmock.NewRows([]string{"category"}).
+						AddRow("Apparel").
+						AddRow("Shoes"))
+			},
+			expected: expected{categories: []string{"Apparel", "Shoes"}, err: nil},
+		},
+		"should return error when the query fails": {
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT DISTINCT "category" FROM "products"`).
+					WillReturnError(assert.AnError)
+			},
+			expected: expected{categories: nil, err: assert.AnError},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			repo, mock := newTestRepo(t)
+			tc.mockSetup(mock)
+
+			categories, err := repo.FindCategories(context.Background())
+
+			assert.ErrorIs(t, err, tc.expected.err)
+			assert.Equal(t, tc.expected.categories, categories)
 			assert.NoError(t, mock.ExpectationsWereMet())
 		})
 	}

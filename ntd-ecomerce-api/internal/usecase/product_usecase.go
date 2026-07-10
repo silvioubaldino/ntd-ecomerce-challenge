@@ -16,10 +16,11 @@ import (
 type (
 	ProductRepository interface {
 		Add(ctx context.Context, product domain.Product) (domain.Product, error)
-		FindAll(ctx context.Context, page domain.Page) (domain.ProductList, error)
+		FindAll(ctx context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error)
 		FindByID(ctx context.Context, id uuid.UUID) (domain.Product, error)
 		Update(ctx context.Context, product domain.Product) (domain.Product, error)
 		Delete(ctx context.Context, id uuid.UUID) error
+		FindCategories(ctx context.Context) ([]string, error)
 	}
 
 	Product struct {
@@ -45,13 +46,22 @@ func (u *Product) Add(ctx context.Context, input domain.ProductInput) (domain.Pr
 	return created, nil
 }
 
-func (u *Product) FindAll(ctx context.Context, page domain.Page) (domain.ProductList, error) {
-	list, err := u.repo.FindAll(ctx, page)
+func (u *Product) FindAll(ctx context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error) {
+	list, err := u.repo.FindAll(ctx, filter, page)
 	if err != nil {
 		return domain.ProductList{}, fmt.Errorf("listing products: %w", err)
 	}
 
 	return list, nil
+}
+
+func (u *Product) FindCategories(ctx context.Context) ([]string, error) {
+	categories, err := u.repo.FindCategories(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("listing product categories: %w", err)
+	}
+
+	return categories, nil
 }
 
 func (u *Product) FindByID(ctx context.Context, id uuid.UUID) (domain.Product, error) {

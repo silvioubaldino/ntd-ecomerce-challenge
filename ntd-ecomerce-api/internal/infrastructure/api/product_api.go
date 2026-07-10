@@ -12,20 +12,28 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
+
+var errInvalidProductFilter = errors.New("invalid product filter")
 
 type (
 	ProductUsecase interface {
 		Add(ctx context.Context, input domain.ProductInput) (domain.Product, error)
-		FindAll(ctx context.Context, page domain.Page) (domain.ProductList, error)
+		FindAll(ctx context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error)
 		FindByID(ctx context.Context, id uuid.UUID) (domain.Product, error)
 		Update(ctx context.Context, id uuid.UUID, input domain.ProductInput) (domain.Product, error)
 		DeleteOne(ctx context.Context, id uuid.UUID) error
 		Import(ctx context.Context, r io.Reader) (domain.ImportReport, error)
+		FindCategories(ctx context.Context) ([]string, error)
 	}
 
 	ProductHandler struct {
 		usecase ProductUsecase
+	}
+
+	categoryListResponse struct {
+		Data []string `json:"data"`
 	}
 )
 
@@ -35,6 +43,7 @@ func NewProductHandlers(r *gin.Engine, srv ProductUsecase) {
 	group := r.Group("/products")
 	group.POST("", handler.Add())
 	group.GET("", handler.FindAll())
+	group.GET("/categories", handler.Categories())
 	group.GET("/:id", handler.FindByID())
 	group.PUT("/:id", handler.Update())
 	group.DELETE("/:id", handler.DeleteOne())
@@ -71,13 +80,33 @@ func (h ProductHandler) FindAll() gin.HandlerFunc {
 			return
 		}
 
-		list, err := h.usecase.FindAll(ctx, page)
+		filter, err := h.parseFilter(c)
+		if err != nil {
+			HandleErr(c, err)
+			return
+		}
+
+		list, err := h.usecase.FindAll(ctx, filter, page)
 		if err != nil {
 			HandleErr(c, err)
 			return
 		}
 
 		c.JSON(http.StatusOK, list)
+	}
+}
+
+func (h ProductHandler) Categories() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := c.Request.Context()
+
+		categories, err := h.usecase.FindCategories(ctx)
+		if err != nil {
+			HandleErr(c, err)
+			return
+		}
+
+		c.JSON(http.StatusOK, categoryListResponse{Data: categories})
 	}
 }
 
@@ -200,11 +229,45 @@ func (h ProductHandler) parsePage(c *gin.Context) (domain.Page, error) {
 		page.Size = n
 	}
 
-	page.Query = strings.TrimSpace(c.Query("q"))
-
 	if err := page.Validate(); err != nil {
 		return domain.Page{}, domain.WrapInvalidInput(err, "invalid pagination")
 	}
 
 	return page, nil
+}
+
+func (h ProductHandler) parseFilter(c *gin.Context) (domain.ProductFilter, error) {
+	filter := domain.ProductFilter{
+		Query:    strings.TrimSpace(c.Query("q")),
+		Category: strings.TrimSpace(c.Query("category")),
+		Sort:     domain.ProductSort(strings.TrimSpace(c.Query("sort"))),
+	}
+
+	problems := map[string]string{}
+
+	if raw := strings.TrimSpace(c.Query("price_min")); raw != "" {
+		if v, err := decimal.NewFromString(raw); err != nil {
+			problems["price_min"] = "must_be_non_negative_decimal"
+		} else {
+			filter.PriceMin = &v
+		}
+	}
+
+	if raw := strings.TrimSpace(c.Query("price_max")); raw != "" {
+		if v, err := decimal.NewFromString(raw); err != nil {
+			problems["price_max"] = "must_be_non_negative_decimal"
+		} else {
+			filter.PriceMax = &v
+		}
+	}
+
+	for field, code := range filter.Validate() {
+		problems[field] = code
+	}
+
+	if len(problems) > 0 {
+		return domain.ProductFilter{}, domain.WrapValidation(errInvalidProductFilter, problems)
+	}
+
+	return filter, nil
 }

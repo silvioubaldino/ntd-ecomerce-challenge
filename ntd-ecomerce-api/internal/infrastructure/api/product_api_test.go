@@ -147,9 +147,13 @@ func TestProductHandler_Add(t *testing.T) {
 
 func TestProductHandler_FindAll(t *testing.T) {
 	type expected struct {
-		status int
-		code   string
+		status  int
+		code    string
+		details map[string]string
 	}
+
+	priceMin := decimal.RequireFromString("20")
+	priceMax := decimal.RequireFromString("50")
 
 	tests := map[string]struct {
 		query     string
@@ -159,7 +163,7 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should default to page 1 size 20 when no query params are given": {
 			query: "",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20}).
+				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.Page{Number: 1, Size: 20}).
 					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
 			},
 			expected: expected{status: http.StatusOK},
@@ -167,7 +171,7 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should list the requested page": {
 			query: "?page=2&page_size=20",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.Page{Number: 2, Size: 20}).
+				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.Page{Number: 2, Size: 20}).
 					Return(domain.ProductList{
 						Data:       make([]domain.Product, 5),
 						Pagination: domain.Pagination{Page: 2, PageSize: 20, Total: 25},
@@ -183,15 +187,15 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should behave as unfiltered list when q is absent": {
 			query: "",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: ""}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: ""}, domain.Page{Number: 1, Size: 20}).
 					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
-		"should behave as unfiltered list when q is blank": {
-			query: "?q=%20%20%20",
+		"should behave as unfiltered list when q, category, price_min and sort are blank": {
+			query: "?q=%20%20%20&category=&price_min=&sort=",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: ""}).
+				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.Page{Number: 1, Size: 20}).
 					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
 			},
 			expected: expected{status: http.StatusOK},
@@ -199,7 +203,7 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should pass the trimmed q to the usecase": {
 			query: "?q=%20blue%20",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: "blue"}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: "blue"}, domain.Page{Number: 1, Size: 20}).
 					Return(domain.ProductList{
 						Data:       []domain.Product{{Name: "Blue Shirt"}},
 						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 1},
@@ -210,7 +214,7 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should respond 200 with empty data when q has no matches": {
 			query: "?q=zzz-nomatch",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: "zzz-nomatch"}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: "zzz-nomatch"}, domain.Page{Number: 1, Size: 20}).
 					Return(domain.ProductList{
 						Data:       []domain.Product{},
 						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 0},
@@ -221,7 +225,7 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should paginate the filtered set when q and page are given": {
 			query: "?q=shirt&page=2&page_size=20",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.Page{Number: 2, Size: 20, Query: "shirt"}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: "shirt"}, domain.Page{Number: 2, Size: 20}).
 					Return(domain.ProductList{
 						Data:       make([]domain.Product, 5),
 						Pagination: domain.Pagination{Page: 2, PageSize: 20, Total: 25},
@@ -232,7 +236,7 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should be case-insensitive by passing q through unchanged": {
 			query: "?q=BLUE",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.Page{Number: 1, Size: 20, Query: "BLUE"}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: "BLUE"}, domain.Page{Number: 1, Size: 20}).
 					Return(domain.ProductList{
 						Data:       []domain.Product{{Name: "Blue Shirt"}},
 						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 1},
@@ -244,6 +248,64 @@ func TestProductHandler_FindAll(t *testing.T) {
 			query:     "?q=blue&page=0",
 			mockSetup: func(_ *MockProductUsecase) {},
 			expected:  expected{status: http.StatusUnprocessableEntity, code: "validation_error"},
+		},
+		"should pass the trimmed category to the usecase": {
+			query: "?category=%20Apparel%20",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.ProductFilter{Category: "Apparel"}, domain.Page{Number: 1, Size: 20}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should combine q, category and price bounds with the sort filter": {
+			query: "?q=shirt&category=Apparel&price_min=20&price_max=50&sort=name_desc",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.ProductFilter{
+					Query:    "shirt",
+					Category: "Apparel",
+					PriceMin: &priceMin,
+					PriceMax: &priceMax,
+					Sort:     domain.ProductSortNameDesc,
+				}, domain.Page{Number: 1, Size: 20}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should respond 422 with must_be_non_negative_decimal when price_min is not a decimal": {
+			query:     "?price_min=abc",
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"price_min": "must_be_non_negative_decimal"},
+			},
+		},
+		"should respond 422 with must_be_non_negative_decimal when price_min is negative": {
+			query:     "?price_min=-1",
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"price_min": "must_be_non_negative_decimal"},
+			},
+		},
+		"should respond 422 with must_not_exceed_price_max when price_min is greater than price_max": {
+			query:     "?price_min=30&price_max=10",
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"price_min": "must_not_exceed_price_max"},
+			},
+		},
+		"should respond 422 with invalid_sort when sort is outside the enum": {
+			query:     "?sort=cheapest",
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"sort": "invalid_sort"},
+			},
 		},
 	}
 
@@ -265,11 +327,65 @@ func TestProductHandler_FindAll(t *testing.T) {
 				var envelope testErrorEnvelope
 				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &envelope))
 				assert.Equal(t, tc.expected.code, envelope.Error.Code)
+				if tc.expected.details != nil {
+					assert.Equal(t, tc.expected.details, envelope.Error.Details)
+				}
 			}
 
 			assert.Equal(t, tc.expected.status, rec.Code)
 		})
 	}
+}
+
+func TestProductHandler_Categories(t *testing.T) {
+	type expected struct {
+		status int
+	}
+
+	tests := map[string]struct {
+		mockSetup func(mockUsecase *MockProductUsecase)
+		expected  expected
+	}{
+		"should respond 200 with distinct categories ascending": {
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindCategories").Return([]string{"Apparel", "Shoes"}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should respond 500 when the usecase fails": {
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindCategories").Return([]string(nil), errors.New("boom"))
+			},
+			expected: expected{status: http.StatusInternalServerError},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var (
+				mockUsecase = &MockProductUsecase{}
+				engine      = newTestEngine(mockUsecase)
+			)
+			defer mockUsecase.AssertExpectations(t)
+			tc.mockSetup(mockUsecase)
+
+			req := httptest.NewRequest(http.MethodGet, "/products/categories", nil)
+			rec := httptest.NewRecorder()
+
+			engine.ServeHTTP(rec, req)
+
+			assert.Equal(t, tc.expected.status, rec.Code)
+			if tc.expected.status == http.StatusOK {
+				var body categoryListResponseTest
+				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
+				assert.Equal(t, []string{"Apparel", "Shoes"}, body.Data)
+			}
+		})
+	}
+}
+
+type categoryListResponseTest struct {
+	Data []string `json:"data"`
 }
 
 func TestProductHandler_FindByID(t *testing.T) {
