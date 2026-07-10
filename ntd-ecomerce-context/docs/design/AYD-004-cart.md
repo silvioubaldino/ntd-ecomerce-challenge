@@ -1,10 +1,10 @@
 ---
 id: AYD-004
 type: design
-status: draft
-updated: 2026-07-08
+status: approved
+updated: 2026-07-09
 parents: [RF-04]
-children: []          # SPECs to be generated later: [SPEC-004@api, SPEC-004@web]
+children: [SPEC-004@api, SPEC-004@web]
 related: [GLO, AYD-001]
 ---
 

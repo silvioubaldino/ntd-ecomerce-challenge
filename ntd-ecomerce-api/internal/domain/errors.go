@@ -78,6 +78,16 @@ func WrapConflict(err error, code, message string) error {
 	}
 }
 
+func WrapConflictDetails(err error, code, message string, details map[string]string) error {
+	return &Error{
+		Kind:    KindConflict,
+		Code:    code,
+		Message: message,
+		Details: details,
+		causes:  []error{ErrConflict, err},
+	}
+}
+
 func WrapBadRequest(err error, code, message string) error {
 	return &Error{
 		Kind:    KindBadRequest,
