@@ -1,7 +1,3 @@
-// Guest Cart identity (AYD-004): the server-generated cart_id is persisted locally and
-// sent on every cart call. A tiny external store lets React components (nav badge, pages)
-// re-render when the cart_id is created or reset.
-
 const CART_ID_KEY = "ntd.cart_id";
 const listeners = new Set<() => void>();
 

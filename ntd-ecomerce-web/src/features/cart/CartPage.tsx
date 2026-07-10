@@ -22,7 +22,6 @@ export function CartPage() {
   const updateItem = useUpdateCartItem();
   const removeItem = useRemoveCartItem();
 
-  // Which line the last mutation error belongs to, so it renders inline on that row.
   const [lineError, setLineError] = useState<{ productId: string; message: string } | null>(
     null,
   );
@@ -60,7 +59,6 @@ export function CartPage() {
     );
   }
 
-  // Loading only when we actually have a cart to fetch.
   if (cartId !== null && cartQuery.isLoading) {
     return (
       <div className="flex flex-col gap-6">
@@ -180,13 +178,7 @@ export function CartPage() {
       </Card>
 
       <div className="flex items-center justify-end">
-        {/* Checkout is AYD-005 (POST /orders) — entry point only, not implemented here. */}
-        <Button
-          onClick={() => {
-            /* checkout flow ships in AYD-005 */
-          }}
-          title="Checkout is coming soon"
-        >
+        <Button onClick={() => {}} title="Checkout is coming soon">
           Proceed to checkout
           <ChevronRightIcon className="h-4 w-4" />
         </Button>

@@ -19,12 +19,10 @@ const cartKeys = {
   detail: (cartId: string | null) => ["cart", cartId] as const,
 };
 
-/** Reactive view of the guest cart_id persisted in localStorage. */
 export function useCartId(): string | null {
   return useSyncExternalStore(subscribeCartId, getStoredCartId, () => null);
 }
 
-/** Loads the current Cart; disabled until a cart_id exists. A stale cart (404) resets. */
 export function useCart() {
   const cartId = useCartId();
   const query = useQuery({
@@ -42,10 +40,6 @@ export function useCart() {
   return query;
 }
 
-/**
- * Adds a Product to the cart, creating the cart lazily on first use. If the local cart_id
- * is stale (404 cart_not_found), a fresh cart is created and the add is retried once.
- */
 export function useAddToCart() {
   const queryClient = useQueryClient();
   return useMutation({

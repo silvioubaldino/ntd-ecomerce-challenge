@@ -1,7 +1,5 @@
 import { ApiError } from "../../api/types";
 
-// Maps AYD-004 error codes to customer-facing copy. Money/quantities from `details` are
-// rendered verbatim (no float math). Falls back to the api message, then a generic string.
 export function cartErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) {
     return "Something went wrong. Please try again.";

@@ -90,7 +90,6 @@ export const handlers = [
     });
   }),
 
-  // Cart (AYD-004) — permissive defaults; tests override per scenario.
   http.post("/api/carts", () => HttpResponse.json(makeCart(), { status: 201 })),
 
   http.get("/api/carts/:cartId", ({ params }) =>

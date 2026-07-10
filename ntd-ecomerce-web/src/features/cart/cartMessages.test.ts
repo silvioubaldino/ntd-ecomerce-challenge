@@ -3,17 +3,14 @@ import { cartErrorMessage } from "./cartMessages";
 
 describe("cartErrorMessage", () => {
   it("reports requested vs available for insufficient_stock", () => {
-    // Arrange
     const error = new ApiError(409, {
       code: "insufficient_stock",
       message: "insufficient stock",
       details: { product_id: "p1", requested: "5", available: "3" },
     });
 
-    // Act
     const message = cartErrorMessage(error);
 
-    // Assert
     expect(message).toBe("Only 3 in stock (you requested 5).");
   });
 

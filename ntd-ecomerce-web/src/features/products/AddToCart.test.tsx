@@ -23,7 +23,6 @@ describe("Add to cart from the Store", () => {
   beforeEach(() => localStorage.clear());
 
   it("creates the cart lazily and adds the product on the first add", async () => {
-    // Arrange
     stubProducts();
     let cartsCreated = 0;
     let itemPath: string | undefined;
@@ -48,10 +47,8 @@ describe("Add to cart from the Store", () => {
     renderWithProviders(<App />, { route: "/store" });
     await screen.findByText("Widget");
 
-    // Act
     await userEvent.click(screen.getByRole("button", { name: "Add Widget to cart" }));
 
-    // Assert
     await waitFor(() => expect(localStorage.getItem(CART_ID_KEY)).toBe("new-cart"));
     expect(cartsCreated).toBe(1);
     expect(itemPath).toBe("/api/carts/new-cart/items");
@@ -59,7 +56,6 @@ describe("Add to cart from the Store", () => {
   });
 
   it("reuses the existing cart on later adds (no new POST /carts)", async () => {
-    // Arrange
     localStorage.setItem(CART_ID_KEY, "existing");
     stubProducts();
     let cartsCreated = 0;
@@ -81,16 +77,13 @@ describe("Add to cart from the Store", () => {
     renderWithProviders(<App />, { route: "/store" });
     await screen.findByText("Widget");
 
-    // Act
     await userEvent.click(screen.getByRole("button", { name: "Add Widget to cart" }));
 
-    // Assert
     await waitFor(() => expect(itemPath).toBe("/api/carts/existing/items"));
     expect(cartsCreated).toBe(0);
   });
 
   it("recreates a stale cart on 404 and retries the add", async () => {
-    // Arrange
     localStorage.setItem(CART_ID_KEY, "stale");
     stubProducts();
     server.use(
@@ -116,15 +109,12 @@ describe("Add to cart from the Store", () => {
     renderWithProviders(<App />, { route: "/store" });
     await screen.findByText("Widget");
 
-    // Act
     await userEvent.click(screen.getByRole("button", { name: "Add Widget to cart" }));
 
-    // Assert
     await waitFor(() => expect(localStorage.getItem(CART_ID_KEY)).toBe("fresh"));
   });
 
   it("shows an insufficient_stock message when the add is rejected", async () => {
-    // Arrange
     localStorage.setItem(CART_ID_KEY, "existing");
     stubProducts();
     server.use(
@@ -146,23 +136,19 @@ describe("Add to cart from the Store", () => {
     renderWithProviders(<App />, { route: "/store" });
     await screen.findByText("Widget");
 
-    // Act
     await userEvent.click(screen.getByRole("button", { name: "Add Widget to cart" }));
 
-    // Assert
     expect(
       await screen.findByText("Only 0 in stock (you requested 1)."),
     ).toBeInTheDocument();
   });
 
   it("disables adding an out-of-stock product", async () => {
-    // Arrange
     stubProducts(makeProduct({ stock: 0 }));
 
     renderWithProviders(<App />, { route: "/store" });
     await screen.findByText("Widget");
 
-    // Assert
     expect(screen.getByRole("button", { name: "Add Widget to cart" })).toBeDisabled();
     expect(screen.getByText("Out of stock")).toBeInTheDocument();
   });
