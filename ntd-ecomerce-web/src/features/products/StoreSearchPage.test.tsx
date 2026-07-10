@@ -157,12 +157,10 @@ describe("StoreSearchPage — filters and sorting (SPEC-006)", () => {
 
     await userEvent.selectOptions(screen.getByLabelText("Category"), "Apparel");
 
-    // Only the Apparel product remains — the rest of the catalog is filtered out.
     expect(await screen.findByText("Alpha Jacket")).toBeInTheDocument();
     expect(screen.queryByText("Widget")).not.toBeInTheDocument();
     expect(screen.queryByText("Beta Sneakers")).not.toBeInTheDocument();
 
-    // Reloading directly at the URL the selection produced restores the same filter.
     const { unmount } = renderWithProviders(<App />, {
       route: "/store?category=Apparel",
     });
@@ -231,7 +229,6 @@ describe("StoreSearchPage — filters and sorting (SPEC-006)", () => {
     expect(await screen.findByText("match page 2")).toBeInTheDocument();
     expect(lastPage).toBe(2);
 
-    // Changing a filter while on page 2 resets pagination back to page 1.
     await userEvent.selectOptions(screen.getByLabelText("Sort by"), "price_asc");
     await waitFor(() => expect(lastPage).toBe(1));
   });
@@ -303,7 +300,6 @@ describe("StoreSearchPage — filters and sorting (SPEC-006)", () => {
       await screen.findByText("Minimum price cannot exceed maximum price."),
     ).toBeInTheDocument();
 
-    // Give the debounce window time to elapse — no new request should follow.
     await new Promise((resolve) => setTimeout(resolve, 400));
     expect(requestCount).toBe(countBeforeGuard);
   });

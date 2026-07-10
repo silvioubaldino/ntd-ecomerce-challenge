@@ -65,10 +65,6 @@ export function makeOrder(overrides: Partial<Order> = {}): Order {
   };
 }
 
-// Fixture catalog for SPEC-006 filter/sort scenarios — the default GET /products
-// handler filters and sorts this set by the received query params. Tests that need
-// a specific shape (e.g. exact pagination totals) still override the handler with
-// `server.use`, same as before.
 const FIXTURE_PRODUCTS: Product[] = [
   makeProduct({
     id: "aaaaaaaa-0000-0000-0000-000000000001",

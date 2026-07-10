@@ -33,23 +33,19 @@ describe("useProductSearch", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(seenQueries).toHaveLength(1);
 
-    // Same filters — should hit the cache, not the network.
     rerender({ q: "", page: 1 });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(seenQueries).toHaveLength(1);
 
-    // Category changes — new query key, new request.
     rerender({ q: "", page: 1, category: "Apparel" });
     await waitFor(() => expect(seenQueries).toHaveLength(2));
 
-    // Price bounds change — new query key, new request.
     rerender({ q: "", page: 1, category: "Apparel", priceMin: "10" });
     await waitFor(() => expect(seenQueries).toHaveLength(3));
 
     rerender({ q: "", page: 1, category: "Apparel", priceMin: "10", priceMax: "50" });
     await waitFor(() => expect(seenQueries).toHaveLength(4));
 
-    // Sort changes — new query key, new request.
     rerender({
       q: "",
       page: 1,
