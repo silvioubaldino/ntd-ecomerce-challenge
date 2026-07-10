@@ -5,6 +5,7 @@ import { ProductCreatePage } from "./features/products/ProductCreatePage";
 import { ProductEditPage } from "./features/products/ProductEditPage";
 import { ProductImportPage } from "./features/products/ProductImportPage";
 import { StoreSearchPage } from "./features/products/StoreSearchPage";
+import { CartPage } from "./features/cart/CartPage";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/products/import" element={<ProductImportPage />} />
         <Route path="/products/:id/edit" element={<ProductEditPage />} />
         <Route path="/store" element={<StoreSearchPage />} />
+        <Route path="/cart" element={<CartPage />} />
       </Route>
     </Routes>
   );

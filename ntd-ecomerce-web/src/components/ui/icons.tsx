@@ -106,6 +106,24 @@ export function DownloadIcon({ className }: IconProps) {
   );
 }
 
+export function CartIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M3 4h2l2.2 11.2a1.5 1.5 0 0 0 1.5 1.2h7.9a1.5 1.5 0 0 0 1.5-1.2L20.5 8H6" />
+      <circle cx="9.5" cy="20" r="1.2" />
+      <circle cx="17" cy="20" r="1.2" />
+    </svg>
+  );
+}
+
+export function MinusIcon({ className }: IconProps) {
+  return (
+    <svg {...base(className)}>
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
 export function ShieldIcon({ className }: IconProps) {
   return (
     <svg {...base(className)}>

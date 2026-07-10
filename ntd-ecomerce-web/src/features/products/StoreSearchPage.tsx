@@ -7,7 +7,15 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { Skeleton } from "../../components/ui/Skeleton";
-import { BoxIcon, ChevronLeftIcon, ChevronRightIcon } from "../../components/ui/icons";
+import {
+  BoxIcon,
+  CartIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "../../components/ui/icons";
+import type { Product } from "../../api/types";
+import { cartErrorMessage } from "../cart/cartMessages";
+import { useAddToCart } from "../cart/hooks";
 import { useProductSearch } from "./hooks";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -109,37 +117,7 @@ export function StoreSearchPage() {
         <Card>
           <ul className="divide-y divide-slate-900/5">
             {result.data.map((product) => (
-              <li key={product.id} className="flex items-center justify-between gap-6 px-6 py-4">
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium text-slate-900">{product.name}</span>
-                  {product.description && (
-                    <span className="max-w-xl truncate text-xs text-slate-500">
-                      {product.description}
-                    </span>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Badge tone="brand">{product.category}</Badge>
-                    <span className="font-mono text-xs text-slate-500">{product.sku}</span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className="font-medium tabular-nums text-slate-900">
-                    <span className="mr-0.5 text-slate-400">$</span>
-                    {product.price}
-                  </span>
-                  {product.stock > 0 ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      {product.stock} in stock
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
-                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-                      Out of stock
-                    </span>
-                  )}
-                </div>
-              </li>
+              <ProductRow key={product.id} product={product} />
             ))}
           </ul>
 
@@ -172,6 +150,70 @@ export function StoreSearchPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+function ProductRow({ product }: { product: Product }) {
+  const addToCart = useAddToCart();
+  const outOfStock = product.stock <= 0;
+
+  function add() {
+    addToCart.mutate({ productId: product.id, quantity: 1 });
+  }
+
+  return (
+    <li className="flex flex-col gap-2 px-6 py-4">
+      <div className="flex items-center justify-between gap-6">
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-slate-900">{product.name}</span>
+          {product.description && (
+            <span className="max-w-xl truncate text-xs text-slate-500">
+              {product.description}
+            </span>
+          )}
+          <div className="flex items-center gap-2">
+            <Badge tone="brand">{product.category}</Badge>
+            <span className="font-mono text-xs text-slate-500">{product.sku}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-5">
+          <div className="flex flex-col items-end gap-1">
+            <span className="font-medium tabular-nums text-slate-900">
+              <span className="mr-0.5 text-slate-400">$</span>
+              {product.price}
+            </span>
+            {outOfStock ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                Out of stock
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-xs text-slate-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                {product.stock} in stock
+              </span>
+            )}
+          </div>
+
+          <Button
+            size="sm"
+            disabled={outOfStock || addToCart.isPending}
+            onClick={add}
+            aria-label={`Add ${product.name} to cart`}
+          >
+            <CartIcon className="h-4 w-4" />
+            {outOfStock ? "Unavailable" : "Add to cart"}
+          </Button>
+        </div>
+      </div>
+
+      {addToCart.isError && (
+        <p role="alert" className="text-right text-sm text-red-600">
+          {cartErrorMessage(addToCart.error)}
+        </p>
+      )}
+    </li>
   );
 }
 

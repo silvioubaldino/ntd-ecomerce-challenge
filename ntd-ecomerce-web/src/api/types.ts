@@ -27,6 +27,23 @@ export interface ProductList {
   pagination: Pagination;
 }
 
+export interface CartItem {
+  product_id: string;
+  sku: string;
+  name: string;
+  unit_price: string;
+  quantity: number;
+  subtotal: string;
+}
+
+export interface Cart {
+  id: string;
+  items: CartItem[];
+  total: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ImportSummary {
   total: number;
   imported: number;
@@ -48,6 +65,9 @@ export type ApiErrorCode =
   | "validation_error"
   | "sku_already_exists"
   | "product_not_found"
+  | "cart_not_found"
+  | "item_not_found"
+  | "insufficient_stock"
   | "invalid_header"
   | "invalid_file"
   | "file_too_large"

@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { Product } from "../api/types";
+import type { Cart, CartItem, Product } from "../api/types";
 
 export function makeProduct(overrides: Partial<Product> = {}): Product {
   return {
@@ -11,6 +11,29 @@ export function makeProduct(overrides: Partial<Product> = {}): Product {
     price: "19.90",
     stock: 5,
     weight_kg: "0.50",
+    created_at: "2026-01-01T00:00:00Z",
+    updated_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+export function makeCartItem(overrides: Partial<CartItem> = {}): CartItem {
+  return {
+    product_id: "11111111-1111-1111-1111-111111111111",
+    sku: "WID-001",
+    name: "Widget",
+    unit_price: "19.90",
+    quantity: 1,
+    subtotal: "19.90",
+    ...overrides,
+  };
+}
+
+export function makeCart(overrides: Partial<Cart> = {}): Cart {
+  return {
+    id: "cart-1",
+    items: [],
+    total: "0.00",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...overrides,
@@ -66,4 +89,36 @@ export const handlers = [
       rejected: [],
     });
   }),
+
+  http.post("/api/carts", () => HttpResponse.json(makeCart(), { status: 201 })),
+
+  http.get("/api/carts/:cartId", ({ params }) =>
+    HttpResponse.json(makeCart({ id: params.cartId as string })),
+  ),
+
+  http.post("/api/carts/:cartId/items", async ({ request, params }) => {
+    const body = (await request.json()) as { product_id: string; quantity: number };
+    const item = makeCartItem({
+      product_id: body.product_id,
+      quantity: body.quantity,
+    });
+    return HttpResponse.json(
+      makeCart({ id: params.cartId as string, items: [item], total: item.subtotal }),
+    );
+  }),
+
+  http.put("/api/carts/:cartId/items/:productId", async ({ request, params }) => {
+    const body = (await request.json()) as { quantity: number };
+    const item = makeCartItem({
+      product_id: params.productId as string,
+      quantity: body.quantity,
+    });
+    return HttpResponse.json(
+      makeCart({ id: params.cartId as string, items: [item], total: item.subtotal }),
+    );
+  }),
+
+  http.delete("/api/carts/:cartId/items/:productId", ({ params }) =>
+    HttpResponse.json(makeCart({ id: params.cartId as string })),
+  ),
 ];
