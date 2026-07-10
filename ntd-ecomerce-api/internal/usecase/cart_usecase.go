@@ -124,9 +124,6 @@ func (u *Cart) RemoveItem(ctx context.Context, cartID, productID uuid.UUID) (dom
 	return u.Get(ctx, cartID)
 }
 
-// enrich fills each cart item with live Product data (sku, name, unit_price) and
-// recomputes subtotals and the cart total. unit_price is indicative (mirrors the current
-// Product price); the binding snapshot happens only at checkout (AYD-005).
 func (u *Cart) enrich(ctx context.Context, cart *domain.Cart) error {
 	for i := range cart.Items {
 		product, err := u.products.FindByID(ctx, cart.Items[i].ProductID)

@@ -48,8 +48,6 @@ func validateQuantity(quantity int) map[string]string {
 	return nil
 }
 
-// Recalculate fills each item's subtotal from its indicative unit_price and quantity,
-// then sets the cart total as the sum of the subtotals.
 func (c *Cart) Recalculate() {
 	total := decimal.Zero
 	for i := range c.Items {

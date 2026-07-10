@@ -90,8 +90,6 @@ func (r *CartRepository) FindByID(ctx context.Context, cartID uuid.UUID) (domain
 	}, nil
 }
 
-// SaveItem upserts the absolute quantity for a (cart_id, product_id) line and bumps the
-// cart's updated_at, atomically.
 func (r *CartRepository) SaveItem(ctx context.Context, cartID, productID uuid.UUID, quantity int) error {
 	now := time.Now().UTC()
 
@@ -119,8 +117,6 @@ func (r *CartRepository) SaveItem(ctx context.Context, cartID, productID uuid.UU
 	})
 }
 
-// RemoveItem deletes a line and bumps the cart's updated_at, atomically. It reports
-// item_not_found when the line does not exist.
 func (r *CartRepository) RemoveItem(ctx context.Context, cartID, productID uuid.UUID) error {
 	now := time.Now().UTC()
 
