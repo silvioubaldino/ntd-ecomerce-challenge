@@ -11,6 +11,7 @@ type Registry struct {
 
 	productRepository *repository.ProductRepository
 	cartRepository    *repository.CartRepository
+	orderRepository   *repository.OrderRepository
 }
 
 func NewRegistry(db *gorm.DB) *Registry {
@@ -29,4 +30,11 @@ func (r *Registry) GetCartRepository() *repository.CartRepository {
 		r.cartRepository = repository.NewCartRepository(r.db)
 	}
 	return r.cartRepository
+}
+
+func (r *Registry) GetOrderRepository() *repository.OrderRepository {
+	if r.orderRepository == nil {
+		r.orderRepository = repository.NewOrderRepository(r.db)
+	}
+	return r.orderRepository
 }
