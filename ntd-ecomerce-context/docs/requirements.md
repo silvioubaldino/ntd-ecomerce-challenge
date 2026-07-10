@@ -3,7 +3,7 @@ id: REQ-01
 type: requirements
 title: Requirements and glossary
 status: approved
-updated: 2026-07-08
+updated: 2026-07-10
 parents: []
 children: []
 related: [GLO]
@@ -20,6 +20,7 @@ related: [GLO]
 | RF-02 | Import Products in bulk from a CSV file | Must | An operator can upload a CSV file with columns `name, sku, description, category, price, stock, weight_kg` and have valid rows imported as Products (see RN-01, RN-02) |
 | RF-03 | Search the Product catalog | Must | A customer can search for Products through the web UI, backed by the API |
 | RF-04 | Purchase Products | Must | A customer can add one or more Products to a Cart and complete a purchase through the web UI, resulting in an Order that contains those Products with their quantities; payment is simulated — no real payment provider is integrated |
+| RF-05 | Filter and sort the Product catalog | Should | A customer can narrow the catalog by `category` and by a price range, and sort the results (at least by price ascending/descending) through the web UI, backed by the API — combinable with the RF-03 search |
 
 ## Non-functional (RNF)
 | ID | Category | Requirement | Target |
