@@ -1,7 +1,7 @@
 ---
 id: SPEC-006
 type: spec
-status: draft
+status: done
 updated: 2026-07-10
 parents: [AYD-006@context]
 related: [GLO, SPEC-003]
@@ -138,11 +138,11 @@ itself is api-side; the web just stops advertising category in the placeholder.
   every filter; min>max guard logic.
 
 ## Checklist
-- [ ] Filter bar on `/store`: category dropdown (api-fed), price min/max, sort select
-- [ ] All controls AND-combine with `q` and pagination; page resets on any change
-- [ ] URL reflects and restores every control (shareable, back-button friendly)
-- [ ] "Clear filters" resets category/price/sort; empty state accounts for filters
-- [ ] min > max blocked client-side; categories failure doesn't block the list
-- [ ] Search placeholder no longer mentions category
-- [ ] All acceptance scenarios covered by passing tests; lint clean
-- [ ] Changelog line added; spec marked `done`
+- [x] Filter bar on `/store`: category dropdown (api-fed), price min/max, sort select
+- [x] All controls AND-combine with `q` and pagination; page resets on any change
+- [x] URL reflects and restores every control (shareable, back-button friendly)
+- [x] "Clear filters" resets category/price/sort; empty state accounts for filters
+- [x] min > max blocked client-side; categories failure doesn't block the list
+- [x] Search placeholder no longer mentions category
+- [x] All acceptance scenarios covered by passing tests; lint clean
+- [x] Changelog line added; spec marked `done`

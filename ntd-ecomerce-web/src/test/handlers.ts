@@ -65,21 +65,128 @@ export function makeOrder(overrides: Partial<Order> = {}): Order {
   };
 }
 
+// Fixture catalog for SPEC-006 filter/sort scenarios — the default GET /products
+// handler filters and sorts this set by the received query params. Tests that need
+// a specific shape (e.g. exact pagination totals) still override the handler with
+// `server.use`, same as before.
+const FIXTURE_PRODUCTS: Product[] = [
+  makeProduct({
+    id: "aaaaaaaa-0000-0000-0000-000000000001",
+    name: "Alpha Jacket",
+    sku: "APP-001",
+    description: "A warm jacket",
+    category: "Apparel",
+    price: "45.00",
+    created_at: "2026-01-01T00:00:00Z",
+  }),
+  makeProduct({
+    id: "aaaaaaaa-0000-0000-0000-000000000002",
+    name: "Beta Sneakers",
+    sku: "SHO-001",
+    description: "Running sneakers",
+    category: "Shoes",
+    price: "80.00",
+    created_at: "2026-01-02T00:00:00Z",
+  }),
+  makeProduct({
+    id: "aaaaaaaa-0000-0000-0000-000000000003",
+    name: "Gamma Hammer",
+    sku: "TOL-001",
+    description: "A sturdy hammer",
+    category: "Tools",
+    price: "15.00",
+    created_at: "2026-01-03T00:00:00Z",
+  }),
+  makeProduct({
+    id: "aaaaaaaa-0000-0000-0000-000000000004",
+    name: "Delta Boots",
+    sku: "SHO-002",
+    description: "Hiking boots",
+    category: "Shoes",
+    price: "60.00",
+    created_at: "2026-01-04T00:00:00Z",
+  }),
+  makeProduct({
+    id: "aaaaaaaa-0000-0000-0000-000000000005",
+    name: "Widget",
+    sku: "WID-001",
+    description: "A widget",
+    category: "Tools",
+    price: "19.90",
+    created_at: "2026-01-05T00:00:00Z",
+  }),
+];
+
+function filterAndSortProducts(url: URL): Product[] {
+  const q = url.searchParams.get("q")?.trim().toLowerCase();
+  const category = url.searchParams.get("category")?.trim().toLowerCase();
+  const priceMin = url.searchParams.get("price_min");
+  const priceMax = url.searchParams.get("price_max");
+  const sort = url.searchParams.get("sort");
+
+  let items = [...FIXTURE_PRODUCTS];
+
+  if (q) {
+    items = items.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sku.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q),
+    );
+  }
+  if (category) {
+    items = items.filter((p) => p.category.toLowerCase() === category);
+  }
+  if (priceMin) {
+    items = items.filter((p) => Number(p.price) >= Number(priceMin));
+  }
+  if (priceMax) {
+    items = items.filter((p) => Number(p.price) <= Number(priceMax));
+  }
+
+  switch (sort) {
+    case "price_asc":
+      items.sort((a, b) => Number(a.price) - Number(b.price));
+      break;
+    case "price_desc":
+      items.sort((a, b) => Number(b.price) - Number(a.price));
+      break;
+    case "name_asc":
+      items.sort((a, b) => a.name.localeCompare(b.name));
+      break;
+    case "name_desc":
+      items.sort((a, b) => b.name.localeCompare(a.name));
+      break;
+    case "newest":
+      items.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      break;
+    default:
+      break;
+  }
+
+  return items;
+}
+
 export const handlers = [
   http.get("/api/products", ({ request }) => {
     const url = new URL(request.url);
-    const q = url.searchParams.get("q");
     const page = Number(url.searchParams.get("page") ?? "1");
-    if (q) {
-      return HttpResponse.json({
-        data: [makeProduct({ name: `${q} match` })],
-        pagination: { page, page_size: 20, total: 1 },
-      });
-    }
+    const pageSize = Number(url.searchParams.get("page_size") ?? "20");
+
+    const items = filterAndSortProducts(url);
+    const total = items.length;
+    const start = (page - 1) * pageSize;
+    const pageItems = items.slice(start, start + pageSize);
+
     return HttpResponse.json({
-      data: [makeProduct()],
-      pagination: { page, page_size: 20, total: 1 },
+      data: pageItems,
+      pagination: { page, page_size: pageSize, total },
     });
+  }),
+
+  http.get("/api/products/categories", () => {
+    const categories = Array.from(new Set(FIXTURE_PRODUCTS.map((p) => p.category))).sort();
+    return HttpResponse.json({ data: categories });
   }),
 
   http.get("/api/products/:id", ({ params }) => {
