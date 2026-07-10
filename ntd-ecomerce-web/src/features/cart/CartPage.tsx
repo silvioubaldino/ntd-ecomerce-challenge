@@ -178,10 +178,10 @@ export function CartPage() {
       </Card>
 
       <div className="flex items-center justify-end">
-        <Button onClick={() => {}} title="Checkout is coming soon">
+        <ButtonLink to="/checkout">
           Proceed to checkout
           <ChevronRightIcon className="h-4 w-4" />
-        </Button>
+        </ButtonLink>
       </div>
     </div>
   );

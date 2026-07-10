@@ -44,6 +44,35 @@ export interface Cart {
   updated_at: string;
 }
 
+export interface Customer {
+  name: string;
+  email: string;
+}
+
+export interface Payment {
+  method: "simulated";
+  status: "approved";
+}
+
+export interface OrderItem {
+  product_id: string;
+  sku: string;
+  name: string;
+  unit_price: string;
+  quantity: number;
+  subtotal: string;
+}
+
+export interface Order {
+  id: string;
+  status: "confirmed";
+  customer: Customer;
+  items: OrderItem[];
+  total: string;
+  payment: Payment;
+  created_at: string;
+}
+
 export interface ImportSummary {
   total: number;
   imported: number;
@@ -66,7 +95,9 @@ export type ApiErrorCode =
   | "sku_already_exists"
   | "product_not_found"
   | "cart_not_found"
+  | "cart_empty"
   | "item_not_found"
+  | "order_not_found"
   | "insufficient_stock"
   | "invalid_header"
   | "invalid_file"
