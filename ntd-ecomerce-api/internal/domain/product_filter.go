@@ -12,9 +12,6 @@ const (
 	ProductSortNewest    ProductSort = "newest"
 )
 
-// ParseProductSort validates raw against the known ProductSort enum values.
-// An empty raw is not a valid sort on its own — callers treat "sort not sent"
-// as a zero ProductFilter.Sort before calling this.
 func ParseProductSort(raw string) (ProductSort, bool) {
 	switch ProductSort(raw) {
 	case ProductSortPriceAsc, ProductSortPriceDesc, ProductSortNameAsc, ProductSortNameDesc, ProductSortNewest:
@@ -24,9 +21,6 @@ func ParseProductSort(raw string) (ProductSort, bool) {
 	}
 }
 
-// ProductFilter narrows a Product listing. Query matches only name/sku/description
-// (category is matched exclusively via Category — AYD-006 narrowing). PriceMin/
-// PriceMax are nil when not sent.
 type ProductFilter struct {
 	Query    string
 	Category string
@@ -35,10 +29,6 @@ type ProductFilter struct {
 	Sort     ProductSort
 }
 
-// Validate reports problems already-parsed values carry: a negative bound, an
-// inverted range, or a sort value outside the enum. Decimal parse failures are
-// caught by the caller (the handler) before a ProductFilter is even built and
-// use the same "must_be_non_negative_decimal" detail code.
 func (f ProductFilter) Validate() map[string]string {
 	problems := map[string]string{}
 
