@@ -9,15 +9,12 @@ import (
 )
 
 const (
-	// OrderStatusConfirmed is the single terminal Order status in the MVP.
 	OrderStatusConfirmed = "confirmed"
-	// PaymentMethodSimulated / PaymentStatusApproved describe the always-approved
-	// simulated payment (no real provider, no decline path in the MVP).
+
 	PaymentMethodSimulated = "simulated"
 	PaymentStatusApproved  = "approved"
 )
 
-// emailPattern is a deliberately basic email check (RF-04 captures minimal contact only).
 var emailPattern = regexp.MustCompile(`^[^@\s]+@[^@\s]+\.[^@\s]+$`)
 
 type Order struct {
@@ -49,13 +46,11 @@ type Payment struct {
 	Status string `json:"status"`
 }
 
-// CheckoutInput is the POST /orders request body.
 type CheckoutInput struct {
 	CartID   uuid.UUID `json:"cart_id"`
 	Customer Customer  `json:"customer"`
 }
 
-// Validate reports missing/invalid customer contact fields (RF-04: minimal guest contact).
 func (c Customer) Validate() map[string]string {
 	problems := map[string]string{}
 
@@ -76,13 +71,10 @@ func (c Customer) Validate() map[string]string {
 	return problems
 }
 
-// ApprovedPayment returns the simulated, always-approved payment (RF-04).
 func ApprovedPayment() Payment {
 	return Payment{Method: PaymentMethodSimulated, Status: PaymentStatusApproved}
 }
 
-// Recalculate fills each item's subtotal from its snapshot unit_price and quantity, then
-// sets the order total as the (immutable) sum of the subtotals.
 func (o *Order) Recalculate() {
 	total := decimal.Zero
 	for i := range o.Items {

@@ -28,8 +28,6 @@ export function StoreSearchPage() {
   const [inputValue, setInputValue] = useState(q);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Keep the local input in sync when the URL changes from outside this input
-  // (e.g. back/forward navigation, direct navigation to /store?q=...).
   useEffect(() => {
     setInputValue(q);
   }, [q]);

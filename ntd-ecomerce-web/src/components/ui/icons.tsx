@@ -1,5 +1,3 @@
-// Inline SVG icons (24px grid, stroke-based) — no icon library dependency.
-
 interface IconProps {
   className?: string;
 }
