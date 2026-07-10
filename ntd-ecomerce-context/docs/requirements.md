@@ -26,6 +26,7 @@ related: [GLO]
 | ID | Category | Requirement | Target |
 |----|----------|-----------|------|
 | RNF-01 | Deployment | The application must be runnable as a Docker container | `docker run` / `docker compose` starts the full stack (web, api, db) locally |
+| RNF-02 | Performance | Product catalog search and filtering (RF-03, RF-05) must stay index-backed as the catalog grows | `GET /products` with `q`/filters is served by index scans (no full-table sequential scan), verified via query plan on a large seeded catalog |
 
 ## Business rules
 - RN-01: A Product imported via CSV maps the columns `name` (string), `sku` (string), `description` (string), `category` (string), `price` (decimal), `stock` (integer), `weight_kg` (decimal), per the reference sample file `NTD Code Challenge E-Commerce.csv` (project root).
