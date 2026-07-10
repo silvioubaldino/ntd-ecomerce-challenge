@@ -3,30 +3,71 @@ import {
   createProduct,
   deleteProduct,
   getProduct,
+  listCategories,
   listProducts,
   updateProduct,
 } from "../../api/products";
 import { importProducts } from "../../api/import";
-import type { ProductInput } from "../../api/types";
+import type { ProductInput, ProductSort } from "../../api/types";
+
+export interface ProductSearchFilters {
+  q: string;
+  page: number;
+  category?: string;
+  priceMin?: string;
+  priceMax?: string;
+  sort?: ProductSort;
+  enabled?: boolean;
+}
 
 const productKeys = {
   list: (page: number) => ["products", "list", page] as const,
-  search: (q: string, page: number) => ["products", "search", q.trim(), page] as const,
+  search: (filters: ProductSearchFilters) =>
+    [
+      "products",
+      "search",
+      filters.q.trim(),
+      filters.page,
+      filters.category?.trim() ?? "",
+      filters.priceMin?.trim() ?? "",
+      filters.priceMax?.trim() ?? "",
+      filters.sort ?? "",
+    ] as const,
   detail: (id: string) => ["products", "detail", id] as const,
+  categories: () => ["products", "categories"] as const,
 };
 
 export function useProducts(page: number) {
   return useQuery({
     queryKey: productKeys.list(page),
-    queryFn: () => listProducts(page),
+    queryFn: () => listProducts({ page }),
   });
 }
 
-export function useProductSearch(q: string, page: number) {
+export function useProductSearch(filters: ProductSearchFilters) {
   return useQuery({
-    queryKey: productKeys.search(q, page),
-    queryFn: () => listProducts(page, 20, q),
+    queryKey: productKeys.search(filters),
+    queryFn: () =>
+      listProducts({
+        page: filters.page,
+        pageSize: 20,
+        q: filters.q,
+        category: filters.category,
+        priceMin: filters.priceMin,
+        priceMax: filters.priceMax,
+        sort: filters.sort,
+      }),
     placeholderData: (previousData) => previousData,
+    enabled: filters.enabled ?? true,
+  });
+}
+
+export function useCategories() {
+  return useQuery({
+    queryKey: productKeys.categories(),
+    queryFn: () => listCategories(),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 }
 

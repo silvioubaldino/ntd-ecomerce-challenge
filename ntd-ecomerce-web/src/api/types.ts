@@ -27,6 +27,17 @@ export interface ProductList {
   pagination: Pagination;
 }
 
+export interface CategoryList {
+  data: string[];
+}
+
+export type ProductSort =
+  | "price_asc"
+  | "price_desc"
+  | "name_asc"
+  | "name_desc"
+  | "newest";
+
 export interface CartItem {
   product_id: string;
   sku: string;
