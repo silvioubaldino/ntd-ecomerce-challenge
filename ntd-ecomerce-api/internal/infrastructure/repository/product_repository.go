@@ -83,32 +83,40 @@ func (r *ProductRepository) Add(ctx context.Context, product domain.Product) (do
 	return model.toDomain(), nil
 }
 
-func (r *ProductRepository) FindAll(ctx context.Context, page domain.Page) (domain.ProductList, error) {
+func (r *ProductRepository) FindAll(ctx context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error) {
 	var (
 		models []productModel
 		total  int64
 	)
 
 	query := r.db.WithContext(ctx).Model(&productModel{})
-	if page.Query != "" {
-		pattern := "%" + strings.ToLower(page.Query) + "%"
+
+	if filter.Query != "" {
+		pattern := "%" + strings.ToLower(filter.Query) + "%"
 		query = query.Where(
-			"LOWER(name) LIKE ? OR LOWER(sku) LIKE ? OR LOWER(description) LIKE ? OR LOWER(category) LIKE ?",
-			pattern, pattern, pattern, pattern,
+			"LOWER(name) LIKE ? OR LOWER(sku) LIKE ? OR LOWER(description) LIKE ?",
+			pattern, pattern, pattern,
 		)
+	}
+
+	if filter.Category != "" {
+		query = query.Where("LOWER(category) = LOWER(?)", filter.Category)
+	}
+
+	if filter.PriceMin != nil {
+		query = query.Where("price >= ?", *filter.PriceMin)
+	}
+
+	if filter.PriceMax != nil {
+		query = query.Where("price <= ?", *filter.PriceMax)
 	}
 
 	if err := query.Count(&total).Error; err != nil {
 		return domain.ProductList{}, fmt.Errorf("counting products: %w", err)
 	}
 
-	order := "created_at desc"
-	if page.Query != "" {
-		order = "name asc"
-	}
-
 	err := query.
-		Order(order).
+		Order(orderClause(filter)).
 		Offset(page.Offset()).
 		Limit(page.Size).
 		Find(&models).Error
@@ -129,6 +137,42 @@ func (r *ProductRepository) FindAll(ctx context.Context, page domain.Page) (doma
 			Total:    int(total),
 		},
 	}, nil
+}
+
+func orderClause(filter domain.ProductFilter) string {
+	switch filter.Sort {
+	case domain.ProductSortPriceAsc:
+		return "price asc, id asc"
+	case domain.ProductSortPriceDesc:
+		return "price desc, id asc"
+	case domain.ProductSortNameAsc:
+		return "name asc, id asc"
+	case domain.ProductSortNameDesc:
+		return "name desc, id asc"
+	case domain.ProductSortNewest:
+		return "created_at desc, id asc"
+	default:
+		if filter.Query != "" {
+			return "name asc, id asc"
+		}
+		return "created_at desc, id asc"
+	}
+}
+
+func (r *ProductRepository) FindCategories(ctx context.Context) ([]string, error) {
+	var categories []string
+
+	err := r.db.WithContext(ctx).
+		Model(&productModel{}).
+		Where("TRIM(category) <> ''").
+		Distinct("category").
+		Order("category asc").
+		Pluck("category", &categories).Error
+	if err != nil {
+		return nil, fmt.Errorf("listing product categories: %w", err)
+	}
+
+	return categories, nil
 }
 
 func (r *ProductRepository) FindByID(ctx context.Context, id uuid.UUID) (domain.Product, error) {

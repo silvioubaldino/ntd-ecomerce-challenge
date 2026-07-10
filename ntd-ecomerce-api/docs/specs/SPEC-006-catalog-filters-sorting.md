@@ -1,7 +1,7 @@
 ---
 id: SPEC-006
 type: spec
-status: draft
+status: done
 updated: 2026-07-10
 parents: [AYD-006@context]
 related: [GLO, SPEC-001, SPEC-003]
@@ -146,11 +146,11 @@ volume — revisit via TDR@api together with the FTS work.
   (table-driven, AAA, testify).
 
 ## Checklist
-- [ ] `category`, `price_min`, `price_max`, `sort` filter/AND-combine on `GET /products`
-- [ ] `q` matches only `name`/`sku`/`description` (category excluded)
-- [ ] Defaults preserved: `created_at desc` (no `q`), `name asc` (with `q`); explicit `sort` wins
-- [ ] 422 `validation_error` with AYD detail codes for bad bounds/sort; blank params = not sent
-- [ ] `GET /products/categories` returns distinct non-empty categories ascending
-- [ ] `pagination.total` counts the fully-filtered set; no new error codes beyond the AYD
-- [ ] All acceptance scenarios covered by passing tests; `make linter` clean
-- [ ] Changelog updated; spec marked `done`
+- [x] `category`, `price_min`, `price_max`, `sort` filter/AND-combine on `GET /products`
+- [x] `q` matches only `name`/`sku`/`description` (category excluded)
+- [x] Defaults preserved: `created_at desc` (no `q`), `name asc` (with `q`); explicit `sort` wins
+- [x] 422 `validation_error` with AYD detail codes for bad bounds/sort; blank params = not sent
+- [x] `GET /products/categories` returns distinct non-empty categories ascending
+- [x] `pagination.total` counts the fully-filtered set; no new error codes beyond the AYD
+- [x] All acceptance scenarios covered by passing tests; `make linter` clean
+- [x] Changelog updated; spec marked `done`

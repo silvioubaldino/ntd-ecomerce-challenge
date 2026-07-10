@@ -137,7 +137,8 @@ func TestProduct_FindByID(t *testing.T) {
 func TestProduct_FindAll(t *testing.T) {
 	type (
 		input struct {
-			page domain.Page
+			filter domain.ProductFilter
+			page   domain.Page
 		}
 		expected struct {
 			output domain.ProductList
@@ -146,6 +147,7 @@ func TestProduct_FindAll(t *testing.T) {
 	)
 
 	page := domain.DefaultPage()
+	filter := domain.ProductFilter{Category: "Footwear"}
 	list := domain.ProductList{
 		Data:       []domain.Product{{ID: fixtureID}},
 		Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 1},
@@ -157,16 +159,16 @@ func TestProduct_FindAll(t *testing.T) {
 		expected  expected
 	}{
 		"should return the page of products": {
-			input: input{page: page},
+			input: input{filter: filter, page: page},
 			mockSetup: func(mockRepo *MockProductRepository) {
-				mockRepo.On("FindAll", page).Return(list, nil)
+				mockRepo.On("FindAll", filter, page).Return(list, nil)
 			},
 			expected: expected{output: list, err: nil},
 		},
 		"should return error when repository fails": {
-			input: input{page: page},
+			input: input{filter: filter, page: page},
 			mockSetup: func(mockRepo *MockProductRepository) {
-				mockRepo.On("FindAll", page).Return(domain.ProductList{}, assert.AnError)
+				mockRepo.On("FindAll", filter, page).Return(domain.ProductList{}, assert.AnError)
 			},
 			expected: expected{output: domain.ProductList{}, err: assert.AnError},
 		},
@@ -181,7 +183,48 @@ func TestProduct_FindAll(t *testing.T) {
 			defer mockRepo.AssertExpectations(t)
 			tc.mockSetup(mockRepo)
 
-			output, err := svc.FindAll(context.Background(), tc.input.page)
+			output, err := svc.FindAll(context.Background(), tc.input.filter, tc.input.page)
+
+			assert.ErrorIs(t, err, tc.expected.err)
+			assert.Equal(t, tc.expected.output, output)
+		})
+	}
+}
+
+func TestProduct_FindCategories(t *testing.T) {
+	type expected struct {
+		output []string
+		err    error
+	}
+
+	tests := map[string]struct {
+		mockSetup func(mockRepo *MockProductRepository)
+		expected  expected
+	}{
+		"should return distinct categories": {
+			mockSetup: func(mockRepo *MockProductRepository) {
+				mockRepo.On("FindCategories").Return([]string{"Apparel", "Footwear"}, nil)
+			},
+			expected: expected{output: []string{"Apparel", "Footwear"}, err: nil},
+		},
+		"should return error when repository fails": {
+			mockSetup: func(mockRepo *MockProductRepository) {
+				mockRepo.On("FindCategories").Return([]string(nil), assert.AnError)
+			},
+			expected: expected{output: nil, err: assert.AnError},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			var (
+				mockRepo = &MockProductRepository{}
+				svc      = usecase.NewProduct(mockRepo)
+			)
+			defer mockRepo.AssertExpectations(t)
+			tc.mockSetup(mockRepo)
+
+			output, err := svc.FindCategories(context.Background())
 
 			assert.ErrorIs(t, err, tc.expected.err)
 			assert.Equal(t, tc.expected.output, output)
