@@ -3,7 +3,7 @@ id: CHANGELOG-context
 type: changelog
 title: Changelog — context
 status: approved
-updated: 2026-07-09
+updated: 2026-07-10
 ---
 
 # Changelog — context
@@ -29,6 +29,7 @@ that lives in the SPEC/TDR/PR); reference the PR when useful. See CONV §B.3.
 
 ## Unreleased
 
+- Approved AYD-006 - Catalog filters and sorting. [#21](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/21)
 - Specced the Checkout & Order design (AYD-005) for both parts: linked SPEC-005@api and SPEC-005@web as the checkout contract turning a guest Cart into a confirmed, immutable Order with a simulated payment. [#18](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/18)
 - Approved the Cart contract (AYD-004): the guest Cart endpoints, quantity/stock rules (RN-03) and priced response are finalized as the source of truth for SPEC-004@api and SPEC-004@web. [#17](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/17)
 - Added multi-item purchase to the scope: a guest Cart (AYD-004) and Checkout & Order (AYD-005), with the related requirements and glossary terms. [#15](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/15)
