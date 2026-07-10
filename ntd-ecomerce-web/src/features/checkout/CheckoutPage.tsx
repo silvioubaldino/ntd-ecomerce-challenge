@@ -29,7 +29,6 @@ export function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [topError, setTopError] = useState<string | null>(null);
-  // Set when the api reports the cart is empty/gone at submit time.
   const [consumed, setConsumed] = useState(false);
 
   const header = (

@@ -86,8 +86,10 @@ cd ntd-ecomerce-web  && npm test     # vitest
 
 ## CSV import
 
-The reference sample CSV (`NTD Code Challenge E-Commerce.csv`, provided with the
-challenge) was **downloaded on 2026-07-08**.
+The reference sample CSV ([`NTD Code Challenge E-Commerce.csv`](./NTD%20Code%20Challenge%20E-Commerce.csv),
+kept at the project root) was **downloaded on 2026-07-08**. Use it via
+`/products/import` in the web UI, or `POST /products/import` directly, to try the
+bulk-import flow end to end.
 
 Expected columns: `name, sku, description, category, price, stock, weight_kg`. Each row
 is validated independently on import — rows with missing required fields, a

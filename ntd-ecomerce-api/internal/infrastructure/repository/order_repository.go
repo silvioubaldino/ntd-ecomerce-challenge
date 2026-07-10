@@ -14,7 +14,6 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-// Local sentinels used only as the underlying cause of the wrapped domain errors below.
 var (
 	errCartEmpty         = errors.New("cart is empty")
 	errInsufficientStock = errors.New("insufficient stock")
@@ -78,10 +77,6 @@ func NewOrderRepository(db *gorm.DB) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-// Checkout runs the whole checkout atomically (RN-04): load the cart, re-check every
-// line's stock under a row lock (RN-03), snapshot price/sku/name, decrement stock, insert
-// the confirmed order and its items, and consume (delete) the cart. Any error rolls the
-// whole transaction back, so nothing is committed on a shortfall.
 func (r *OrderRepository) Checkout(ctx context.Context, cartID uuid.UUID, customer domain.Customer) (domain.Order, error) {
 	var result domain.Order
 

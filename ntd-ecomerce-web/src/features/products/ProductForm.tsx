@@ -182,8 +182,6 @@ function Field({
     <span className="text-xs font-normal text-red-600">{error}</span>
   );
 
-  // When the control has visual adornments (e.g. the "$" prefix), the label can't
-  // wrap it — the adornment text would leak into the accessible label name.
   if (htmlFor) {
     return (
       <div className={fieldClasses}>

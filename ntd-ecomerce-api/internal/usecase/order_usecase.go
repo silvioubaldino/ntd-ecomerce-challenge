@@ -11,9 +11,6 @@ import (
 
 type (
 	OrderRepository interface {
-		// Checkout runs the whole checkout atomically (load cart, re-check stock,
-		// snapshot, decrement stock, insert order, consume cart) in a single DB
-		// transaction with product row locks.
 		Checkout(ctx context.Context, cartID uuid.UUID, customer domain.Customer) (domain.Order, error)
 		FindByID(ctx context.Context, orderID uuid.UUID) (domain.Order, error)
 	}
@@ -27,9 +24,6 @@ func NewOrder(orders OrderRepository) Order {
 	return Order{orders: orders}
 }
 
-// Checkout validates the customer contact, then delegates the atomic checkout to the
-// repository. The stock re-check (RN-03) and price snapshot + stock decrement (RN-04) run
-// as one transaction owned by the repository.
 func (u *Order) Checkout(ctx context.Context, input domain.CheckoutInput) (domain.Order, error) {
 	if problems := input.Customer.Validate(); len(problems) > 0 {
 		return domain.Order{}, domain.WrapValidation(ErrInvalidCustomerInput, problems)
