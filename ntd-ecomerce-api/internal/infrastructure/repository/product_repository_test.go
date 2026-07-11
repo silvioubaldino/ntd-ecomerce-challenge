@@ -123,18 +123,30 @@ func TestProductRepository_FindAll(t *testing.T) {
 			},
 			expected: expected{total: 2, err: nil},
 		},
-		"should filter case-insensitively over name/sku/description (not category) and order by name asc when q is present": {
+		"should filter via FTS on text fields OR substring on sku, and order by name asc when q is present": {
 			input: input{filter: domain.ProductFilter{Query: "blue"}, page: domain.Page{Number: 1, Size: 20}},
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE LOWER\(name\) LIKE \$1 OR LOWER\(sku\) LIKE \$2 OR LOWER\(description\) LIKE \$3`).
-					WithArgs("%blue%", "%blue%", "%blue%").
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE search_vector @@ websearch_to_tsquery\('english', \$1\) OR sku ILIKE \$2`).
+					WithArgs("blue", "%blue%").
 					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(1))
-				mock.ExpectQuery(`SELECT \* FROM "products" WHERE LOWER\(name\) LIKE \$1 OR LOWER\(sku\) LIKE \$2 OR LOWER\(description\) LIKE \$3.*ORDER BY name asc, id asc`).
-					WithArgs("%blue%", "%blue%", "%blue%", 20).
+				mock.ExpectQuery(`SELECT \* FROM "products" WHERE search_vector @@ websearch_to_tsquery\('english', \$1\) OR sku ILIKE \$2.*ORDER BY name asc, id asc`).
+					WithArgs("blue", "%blue%", 20).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}).
 						AddRow(fixtureID, "Blue Shirt", "BS-021"))
 			},
 			expected: expected{total: 1, err: nil},
+		},
+		"should escape sku LIKE wildcards in q so they are matched literally": {
+			input: input{filter: domain.ProductFilter{Query: "TS_50%"}, page: domain.Page{Number: 1, Size: 20}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT count\(\*\) FROM "products" WHERE search_vector @@ websearch_to_tsquery\('english', \$1\) OR sku ILIKE \$2`).
+					WithArgs("TS_50%", `%TS\_50\%%`).
+					WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(0))
+				mock.ExpectQuery(`SELECT \* FROM "products" WHERE search_vector @@ websearch_to_tsquery\('english', \$1\) OR sku ILIKE \$2.*ORDER BY name asc, id asc`).
+					WithArgs("TS_50%", `%TS\_50\%%`, 20).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "name", "sku"}))
+			},
+			expected: expected{total: 0, err: nil},
 		},
 		"should add a category equality clause when category is set": {
 			input: input{filter: domain.ProductFilter{Category: "Apparel"}, page: domain.Page{Number: 1, Size: 20}},
