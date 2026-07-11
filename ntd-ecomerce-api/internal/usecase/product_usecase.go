@@ -16,7 +16,7 @@ import (
 type (
 	ProductRepository interface {
 		Add(ctx context.Context, product domain.Product) (domain.Product, error)
-		FindAll(ctx context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error)
+		FindAll(ctx context.Context, filter domain.ProductFilter, page domain.PageRequest) (domain.ProductList, error)
 		FindByID(ctx context.Context, id uuid.UUID) (domain.Product, error)
 		Update(ctx context.Context, product domain.Product) (domain.Product, error)
 		Delete(ctx context.Context, id uuid.UUID) error
@@ -46,7 +46,7 @@ func (u *Product) Add(ctx context.Context, input domain.ProductInput) (domain.Pr
 	return created, nil
 }
 
-func (u *Product) FindAll(ctx context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error) {
+func (u *Product) FindAll(ctx context.Context, filter domain.ProductFilter, page domain.PageRequest) (domain.ProductList, error) {
 	list, err := u.repo.FindAll(ctx, filter, page)
 	if err != nil {
 		return domain.ProductList{}, fmt.Errorf("listing products: %w", err)

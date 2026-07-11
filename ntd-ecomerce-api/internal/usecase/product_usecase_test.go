@@ -138,7 +138,7 @@ func TestProduct_FindAll(t *testing.T) {
 	type (
 		input struct {
 			filter domain.ProductFilter
-			page   domain.Page
+			page   domain.PageRequest
 		}
 		expected struct {
 			output domain.ProductList
@@ -146,11 +146,11 @@ func TestProduct_FindAll(t *testing.T) {
 		}
 	)
 
-	page := domain.DefaultPage()
+	page := domain.DefaultPageRequest()
 	filter := domain.ProductFilter{Category: "Footwear"}
 	list := domain.ProductList{
 		Data:       []domain.Product{{ID: fixtureID}},
-		Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 1},
+		Pagination: domain.Pagination{Limit: 20, NextCursor: nil},
 	}
 
 	tests := map[string]struct {

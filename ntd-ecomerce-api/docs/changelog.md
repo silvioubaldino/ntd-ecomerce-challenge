@@ -19,6 +19,7 @@ CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
+- Implemented SPEC-008 - Catalog pagination: keyset (cursor-based) pagination replaces offset paging for index-backed deep-page performance. [#27](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/27)
 - Implemented SPEC-007 - Product search performance: catalog search stays index-backed as the catalog grows. [#25](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/25)
 - Implemented SPEC-006 - Catalog filters and sorting. [#22](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/22)
 - Implemented SPEC-005 - Checkout & Order: create a confirmed Order from a guest Cart with a simulated payment, re-checking stock and snapshotting prices while decrementing stock atomically, and retrieve an Order by id. [#18](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/18)

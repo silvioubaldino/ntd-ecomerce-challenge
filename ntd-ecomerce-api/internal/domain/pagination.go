@@ -1,39 +1,27 @@
 package domain
 
-import "errors"
-
 const (
-	DefaultPageSize = 20
-	MaxPageSize     = 100
+	DefaultLimit = 20
+	MaxLimit     = 100
 )
 
-var ErrInvalidPagination = errors.New("invalid pagination")
-
-type Page struct {
-	Number int
-	Size   int
+type PageRequest struct {
+	Limit  int
+	Cursor *Cursor
 }
 
-func DefaultPage() Page {
-	return Page{Number: 1, Size: DefaultPageSize}
+func DefaultPageRequest() PageRequest {
+	return PageRequest{Limit: DefaultLimit}
 }
 
-func (p Page) Validate() error {
-	if p.Number < 1 {
-		return ErrInvalidPagination
+func ValidateLimit(n int) (code string, ok bool) {
+	if n < 1 || n > MaxLimit {
+		return "must_be_between_1_and_100", false
 	}
-	if p.Size < 1 || p.Size > MaxPageSize {
-		return ErrInvalidPagination
-	}
-	return nil
-}
-
-func (p Page) Offset() int {
-	return (p.Number - 1) * p.Size
+	return "", true
 }
 
 type Pagination struct {
-	Page     int `json:"page"`
-	PageSize int `json:"page_size"`
-	Total    int `json:"total"`
+	Limit      int     `json:"limit"`
+	NextCursor *string `json:"next_cursor"`
 }

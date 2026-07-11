@@ -1,8 +1,8 @@
 ---
 id: SPEC-008
 type: spec
-status: draft
-updated: 2026-07-10
+status: done
+updated: 2026-07-11
 parents: [AYD-008@context]
 related: [GLO, SPEC-006, SPEC-007]
 ---
