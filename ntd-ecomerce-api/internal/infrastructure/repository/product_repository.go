@@ -92,10 +92,9 @@ func (r *ProductRepository) FindAll(ctx context.Context, filter domain.ProductFi
 	query := r.db.WithContext(ctx).Model(&productModel{})
 
 	if filter.Query != "" {
-		pattern := "%" + strings.ToLower(filter.Query) + "%"
 		query = query.Where(
-			"LOWER(name) LIKE ? OR LOWER(sku) LIKE ? OR LOWER(description) LIKE ?",
-			pattern, pattern, pattern,
+			"search_vector @@ websearch_to_tsquery('english', ?) OR sku ILIKE ?",
+			filter.Query, "%"+escapeLike(filter.Query)+"%",
 		)
 	}
 
@@ -157,6 +156,12 @@ func orderClause(filter domain.ProductFilter) string {
 		}
 		return "created_at desc, id asc"
 	}
+}
+
+var likeEscaper = strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+
+func escapeLike(s string) string {
+	return likeEscaper.Replace(s)
 }
 
 func (r *ProductRepository) FindCategories(ctx context.Context) ([]string, error) {

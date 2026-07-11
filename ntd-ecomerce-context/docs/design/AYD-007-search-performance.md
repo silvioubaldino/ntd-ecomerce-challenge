@@ -4,7 +4,7 @@ type: design
 status: draft
 updated: 2026-07-10
 parents: [RNF-02]
-children: []          # SPEC-007@api once specced
+children: [SPEC-007@api]
 related: [GLO, AYD-001, AYD-003, AYD-006]
 ---
 
@@ -28,7 +28,7 @@ substring semantics on `sku`.
 ## Affected parts
 | Part | Role in this feature | Generated SPEC |
 |-------|---------------------|-------------|
-| api | Owns the change: search document column + indexes (migration) and the hybrid `q` predicate | SPEC-007@api (to be created) |
+| api | Owns the change: search document column + indexes (migration) and the hybrid `q` predicate | SPEC-007@api |
 | web | No code change — sends the same `q` and renders the same envelope; only the matching of results improves | — |
 
 ## Contract (source of truth)
