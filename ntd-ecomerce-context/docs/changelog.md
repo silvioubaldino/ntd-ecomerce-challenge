@@ -29,7 +29,7 @@ that lives in the SPEC/TDR/PR); reference the PR when useful. See CONV §B.3.
 
 ## Unreleased
 
-- Created AYD-008 (keyset cursor-based catalog pagination): supersedes the offset paging and total count of the product list contract; linked SPEC-008@api and SPEC-008@web.
+- Created AYD-008 (keyset cursor-based catalog pagination): supersedes the offset paging and total count of the product list contract; linked SPEC-008@api and SPEC-008@web. [#26](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/26)
 - Created AYD-007 (Product search performance optimization) with index-backed search and the new RNF-02 requirement. [#24](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/24)
 - Approved AYD-006 - Catalog filters and sorting. [#21](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/21)
 - Specced the Checkout & Order design (AYD-005) for both parts: linked SPEC-005@api and SPEC-005@web as the checkout contract turning a guest Cart into a confirmed, immutable Order with a simulated payment. [#18](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/18)
