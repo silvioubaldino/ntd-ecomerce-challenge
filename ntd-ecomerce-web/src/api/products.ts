@@ -2,8 +2,8 @@ import { apiClient } from "./client";
 import type { CategoryList, Product, ProductInput, ProductList, ProductSort } from "./types";
 
 export interface ListProductsOptions {
-  page: number;
-  pageSize?: number;
+  cursor?: string;
+  limit?: number;
   q?: string;
   category?: string;
   priceMin?: string;
@@ -12,8 +12,8 @@ export interface ListProductsOptions {
 }
 
 export function listProducts({
-  page,
-  pageSize = 20,
+  cursor,
+  limit = 20,
   q,
   category,
   priceMin,
@@ -21,8 +21,8 @@ export function listProducts({
   sort,
 }: ListProductsOptions): Promise<ProductList> {
   const params = new URLSearchParams();
-  params.set("page", String(page));
-  params.set("page_size", String(pageSize));
+  params.set("limit", String(limit));
+  if (cursor) params.set("cursor", cursor);
 
   const trimmedQ = q?.trim();
   if (trimmedQ) params.set("q", trimmedQ);

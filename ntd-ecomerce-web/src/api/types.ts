@@ -17,9 +17,8 @@ export type ProductInput = Omit<
 >;
 
 export interface Pagination {
-  page: number;
-  page_size: number;
-  total: number;
+  limit: number;
+  next_cursor: string | null;
 }
 
 export interface ProductList {

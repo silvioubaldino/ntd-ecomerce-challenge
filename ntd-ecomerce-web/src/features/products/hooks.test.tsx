@@ -20,41 +20,50 @@ describe("useProductSearch", () => {
     server.use(
       http.get("/api/products", ({ request }) => {
         seenQueries.push(new URL(request.url).search);
-        return HttpResponse.json({ data: [], pagination: { page: 1, page_size: 20, total: 0 } });
+        return HttpResponse.json({ data: [], pagination: { limit: 20, next_cursor: null } });
       }),
     );
 
     const wrapper = createWrapper();
     const { result, rerender } = renderHook(
       (filters: ProductSearchFilters) => useProductSearch(filters),
-      { wrapper, initialProps: { q: "", page: 1 } as ProductSearchFilters },
+      { wrapper, initialProps: { q: "" } as ProductSearchFilters },
     );
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(seenQueries).toHaveLength(1);
 
-    rerender({ q: "", page: 1 });
+    rerender({ q: "" });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(seenQueries).toHaveLength(1);
 
-    rerender({ q: "", page: 1, category: "Apparel" });
+    rerender({ q: "", category: "Apparel" });
     await waitFor(() => expect(seenQueries).toHaveLength(2));
 
-    rerender({ q: "", page: 1, category: "Apparel", priceMin: "10" });
+    rerender({ q: "", category: "Apparel", priceMin: "10" });
     await waitFor(() => expect(seenQueries).toHaveLength(3));
 
-    rerender({ q: "", page: 1, category: "Apparel", priceMin: "10", priceMax: "50" });
+    rerender({ q: "", category: "Apparel", priceMin: "10", priceMax: "50" });
     await waitFor(() => expect(seenQueries).toHaveLength(4));
 
     rerender({
       q: "",
-      page: 1,
       category: "Apparel",
       priceMin: "10",
       priceMax: "50",
       sort: "price_asc",
     });
     await waitFor(() => expect(seenQueries).toHaveLength(5));
+
+    rerender({
+      q: "",
+      category: "Apparel",
+      priceMin: "10",
+      priceMax: "50",
+      sort: "price_asc",
+      cursor: "cursor:20",
+    });
+    await waitFor(() => expect(seenQueries).toHaveLength(6));
   });
 
   it("does not fire a request while disabled (e.g. an invalid price range)", async () => {
@@ -62,12 +71,12 @@ describe("useProductSearch", () => {
     server.use(
       http.get("/api/products", () => {
         requestCount += 1;
-        return HttpResponse.json({ data: [], pagination: { page: 1, page_size: 20, total: 0 } });
+        return HttpResponse.json({ data: [], pagination: { limit: 20, next_cursor: null } });
       }),
     );
 
     const wrapper = createWrapper();
-    renderHook(() => useProductSearch({ q: "", page: 1, enabled: false }), { wrapper });
+    renderHook(() => useProductSearch({ q: "", enabled: false }), { wrapper });
 
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(requestCount).toBe(0);

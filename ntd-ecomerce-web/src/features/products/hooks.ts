@@ -12,7 +12,7 @@ import type { ProductInput, ProductSort } from "../../api/types";
 
 export interface ProductSearchFilters {
   q: string;
-  page: number;
+  cursor?: string;
   category?: string;
   priceMin?: string;
   priceMax?: string;
@@ -21,13 +21,13 @@ export interface ProductSearchFilters {
 }
 
 const productKeys = {
-  list: (page: number) => ["products", "list", page] as const,
+  list: (cursor?: string) => ["products", "list", cursor ?? ""] as const,
   search: (filters: ProductSearchFilters) =>
     [
       "products",
       "search",
       filters.q.trim(),
-      filters.page,
+      filters.cursor ?? "",
       filters.category?.trim() ?? "",
       filters.priceMin?.trim() ?? "",
       filters.priceMax?.trim() ?? "",
@@ -37,10 +37,10 @@ const productKeys = {
   categories: () => ["products", "categories"] as const,
 };
 
-export function useProducts(page: number) {
+export function useProducts(cursor?: string) {
   return useQuery({
-    queryKey: productKeys.list(page),
-    queryFn: () => listProducts({ page }),
+    queryKey: productKeys.list(cursor),
+    queryFn: () => listProducts({ cursor }),
   });
 }
 
@@ -49,8 +49,8 @@ export function useProductSearch(filters: ProductSearchFilters) {
     queryKey: productKeys.search(filters),
     queryFn: () =>
       listProducts({
-        page: filters.page,
-        pageSize: 20,
+        cursor: filters.cursor,
+        limit: 20,
         q: filters.q,
         category: filters.category,
         priceMin: filters.priceMin,

@@ -1,8 +1,8 @@
 ---
 id: SPEC-008
 type: spec
-status: draft
-updated: 2026-07-10
+status: done
+updated: 2026-07-11
 parents: [AYD-008@context]
 related: [GLO, SPEC-006]
 ---
@@ -177,15 +177,15 @@ fallback above, never a broken or stuck UI.
   `cursor`.
 
 ## Checklist
-- [ ] `Pagination` type and `listProducts`/hooks switched from `page`/`page_size`/`total`
+- [x] `Pagination` type and `listProducts`/hooks switched from `page`/`page_size`/`total`
       to `limit`/`cursor`/`next_cursor`
-- [ ] `useCursorStack` implements push/pop/reset and the deep-link Prev fallback
-- [ ] Storefront: cursor lives in the URL, filter/sort/`q` changes reset cursor + stack,
+- [x] `useCursorStack` implements push/pop/reset and the deep-link Prev fallback
+- [x] Storefront: cursor lives in the URL, filter/sort/`q` changes reset cursor + stack,
       browser Back works
-- [ ] Admin catalog: same Prev/Next cursor mechanics in local state (no URL)
-- [ ] No "Page X of Y" or total/count text renders anywhere in either list
-- [ ] Next disabled iff `next_cursor` is null; Prev disabled iff no active cursor and an
+- [x] Admin catalog: same Prev/Next cursor mechanics in local state (no URL)
+- [x] No "Page X of Y" or total/count text renders anywhere in either list
+- [x] Next disabled iff `next_cursor` is null; Prev disabled iff no active cursor and an
       empty stack
-- [ ] `422 invalid_cursor` recovers to the first page instead of a dead-end error
-- [ ] All acceptance scenarios covered by passing tests; lint clean
-- [ ] Changelog line added; spec marked `done`
+- [x] `422 invalid_cursor` recovers to the first page instead of a dead-end error
+- [x] All acceptance scenarios covered by passing tests; lint clean
+- [x] Changelog line added; spec marked `done`

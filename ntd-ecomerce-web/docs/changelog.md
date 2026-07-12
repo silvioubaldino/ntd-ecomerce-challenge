@@ -19,6 +19,7 @@ CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
+- Implemented SPEC-008 (keyset/cursor pagination for the storefront and admin catalog, replacing page numbers and totals with Prev/Next).
 - Implemented SPEC-006 (Store catalog filters and sorting). [#23](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/23)
 - Implemented SPEC-005 (guest checkout UI: review the cart, enter contact details, place the order, and an order confirmation view). [#19](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/19)
 - Implemented SPEC-004 (guest Cart UI: add to cart from the store, cart view with quantity edit, line removal, running total, and a checkout entry point). [#16](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/16)
