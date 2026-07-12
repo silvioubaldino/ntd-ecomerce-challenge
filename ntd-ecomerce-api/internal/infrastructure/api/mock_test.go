@@ -19,7 +19,7 @@ func (m *MockProductUsecase) Add(_ context.Context, input domain.ProductInput) (
 	return args.Get(0).(domain.Product), args.Error(1)
 }
 
-func (m *MockProductUsecase) FindAll(_ context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error) {
+func (m *MockProductUsecase) FindAll(_ context.Context, filter domain.ProductFilter, page domain.PageRequest) (domain.ProductList, error) {
 	args := m.Called(filter, page)
 	return args.Get(0).(domain.ProductList), args.Error(1)
 }

@@ -53,3 +53,15 @@ func (f ProductFilter) Validate() map[string]string {
 
 	return problems
 }
+
+// EffectiveSort resolves the sort actually applied: an explicit Sort always wins;
+// otherwise it defaults to name_asc when Query is set, newest otherwise.
+func (f ProductFilter) EffectiveSort() ProductSort {
+	if f.Sort != "" {
+		return f.Sort
+	}
+	if f.Query != "" {
+		return ProductSortNameAsc
+	}
+	return ProductSortNewest
+}

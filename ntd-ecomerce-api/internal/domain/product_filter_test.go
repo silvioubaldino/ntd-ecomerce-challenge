@@ -133,3 +133,44 @@ func TestProductFilter_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestProductFilter_EffectiveSort(t *testing.T) {
+	type (
+		input struct {
+			filter domain.ProductFilter
+		}
+		expected struct {
+			sort domain.ProductSort
+		}
+	)
+
+	tests := map[string]struct {
+		input    input
+		expected expected
+	}{
+		"should default to newest when there is no query or explicit sort": {
+			input:    input{filter: domain.ProductFilter{}},
+			expected: expected{sort: domain.ProductSortNewest},
+		},
+		"should default to name_asc when a query is set and sort is not explicit": {
+			input:    input{filter: domain.ProductFilter{Query: "shirt"}},
+			expected: expected{sort: domain.ProductSortNameAsc},
+		},
+		"should use the explicit sort even with a query": {
+			input:    input{filter: domain.ProductFilter{Query: "shirt", Sort: domain.ProductSortPriceDesc}},
+			expected: expected{sort: domain.ProductSortPriceDesc},
+		},
+		"should use the explicit sort without a query": {
+			input:    input{filter: domain.ProductFilter{Sort: domain.ProductSortNameDesc}},
+			expected: expected{sort: domain.ProductSortNameDesc},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			sort := tc.input.filter.EffectiveSort()
+
+			assert.Equal(t, tc.expected.sort, sort)
+		})
+	}
+}

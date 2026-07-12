@@ -83,11 +83,8 @@ func (r *ProductRepository) Add(ctx context.Context, product domain.Product) (do
 	return model.toDomain(), nil
 }
 
-func (r *ProductRepository) FindAll(ctx context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error) {
-	var (
-		models []productModel
-		total  int64
-	)
+func (r *ProductRepository) FindAll(ctx context.Context, filter domain.ProductFilter, page domain.PageRequest) (domain.ProductList, error) {
+	var models []productModel
 
 	query := r.db.WithContext(ctx).Model(&productModel{})
 
@@ -110,17 +107,40 @@ func (r *ProductRepository) FindAll(ctx context.Context, filter domain.ProductFi
 		query = query.Where("price <= ?", *filter.PriceMax)
 	}
 
-	if err := query.Count(&total).Error; err != nil {
-		return domain.ProductList{}, fmt.Errorf("counting products: %w", err)
+	sort := filter.EffectiveSort()
+
+	if page.Cursor != nil {
+		keyValue, err := cursorKeyValue(sort, page.Cursor.Key)
+		if err != nil {
+			return domain.ProductList{}, fmt.Errorf("parsing cursor key: %w", err)
+		}
+
+		op := ">"
+		if !sortAscending(sort) {
+			op = "<"
+		}
+
+		query = query.Where(fmt.Sprintf("(%s, id) %s (?, ?)", sortColumn(sort), op), keyValue, page.Cursor.LastID)
 	}
 
 	err := query.
-		Order(orderClause(filter)).
-		Offset(page.Offset()).
-		Limit(page.Size).
+		Order(orderClause(sort)).
+		Limit(page.Limit + 1).
 		Find(&models).Error
 	if err != nil {
 		return domain.ProductList{}, fmt.Errorf("listing products: %w", err)
+	}
+
+	var nextCursor *string
+	if len(models) > page.Limit {
+		models = models[:page.Limit]
+		last := models[len(models)-1]
+		token := domain.EncodeCursor(domain.Cursor{
+			Sort:   sort,
+			Key:    cursorKeyString(sort, last),
+			LastID: last.ID,
+		})
+		nextCursor = &token
 	}
 
 	products := make([]domain.Product, 0, len(models))
@@ -131,30 +151,66 @@ func (r *ProductRepository) FindAll(ctx context.Context, filter domain.ProductFi
 	return domain.ProductList{
 		Data: products,
 		Pagination: domain.Pagination{
-			Page:     page.Number,
-			PageSize: page.Size,
-			Total:    int(total),
+			Limit:      page.Limit,
+			NextCursor: nextCursor,
 		},
 	}, nil
 }
 
-func orderClause(filter domain.ProductFilter) string {
-	switch filter.Sort {
+func orderClause(sort domain.ProductSort) string {
+	switch sort {
 	case domain.ProductSortPriceAsc:
 		return "price asc, id asc"
 	case domain.ProductSortPriceDesc:
-		return "price desc, id asc"
+		return "price desc, id desc"
 	case domain.ProductSortNameAsc:
 		return "name asc, id asc"
 	case domain.ProductSortNameDesc:
-		return "name desc, id asc"
-	case domain.ProductSortNewest:
-		return "created_at desc, id asc"
-	default:
-		if filter.Query != "" {
-			return "name asc, id asc"
-		}
-		return "created_at desc, id asc"
+		return "name desc, id desc"
+	default: // domain.ProductSortNewest
+		return "created_at desc, id desc"
+	}
+}
+
+func sortColumn(sort domain.ProductSort) string {
+	switch sort {
+	case domain.ProductSortPriceAsc, domain.ProductSortPriceDesc:
+		return "price"
+	case domain.ProductSortNameAsc, domain.ProductSortNameDesc:
+		return "name"
+	default: // domain.ProductSortNewest
+		return "created_at"
+	}
+}
+
+func sortAscending(sort domain.ProductSort) bool {
+	switch sort {
+	case domain.ProductSortPriceDesc, domain.ProductSortNameDesc, domain.ProductSortNewest:
+		return false
+	default: // price_asc, name_asc
+		return true
+	}
+}
+
+func cursorKeyValue(sort domain.ProductSort, key string) (any, error) {
+	switch sort {
+	case domain.ProductSortPriceAsc, domain.ProductSortPriceDesc:
+		return decimal.NewFromString(key)
+	case domain.ProductSortNameAsc, domain.ProductSortNameDesc:
+		return key, nil
+	default: // domain.ProductSortNewest
+		return time.Parse(time.RFC3339Nano, key)
+	}
+}
+
+func cursorKeyString(sort domain.ProductSort, m productModel) string {
+	switch sort {
+	case domain.ProductSortPriceAsc, domain.ProductSortPriceDesc:
+		return m.Price.String()
+	case domain.ProductSortNameAsc, domain.ProductSortNameDesc:
+		return m.Name
+	default: // domain.ProductSortNewest
+		return m.CreatedAt.Format(time.RFC3339Nano)
 	}
 }
 

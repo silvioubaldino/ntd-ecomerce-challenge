@@ -20,7 +20,7 @@ var errInvalidProductFilter = errors.New("invalid product filter")
 type (
 	ProductUsecase interface {
 		Add(ctx context.Context, input domain.ProductInput) (domain.Product, error)
-		FindAll(ctx context.Context, filter domain.ProductFilter, page domain.Page) (domain.ProductList, error)
+		FindAll(ctx context.Context, filter domain.ProductFilter, page domain.PageRequest) (domain.ProductList, error)
 		FindByID(ctx context.Context, id uuid.UUID) (domain.Product, error)
 		Update(ctx context.Context, id uuid.UUID, input domain.ProductInput) (domain.Product, error)
 		DeleteOne(ctx context.Context, id uuid.UUID) error
@@ -74,15 +74,15 @@ func (h ProductHandler) FindAll() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := c.Request.Context()
 
-		page, err := h.parsePage(c)
-		if err != nil {
-			HandleErr(c, err)
-			return
+		filter, problems := h.parseFilter(c)
+
+		page, pageProblems := h.parsePagination(c, filter)
+		for field, code := range pageProblems {
+			problems[field] = code
 		}
 
-		filter, err := h.parseFilter(c)
-		if err != nil {
-			HandleErr(c, err)
+		if len(problems) > 0 {
+			HandleErr(c, domain.WrapValidation(errInvalidProductFilter, problems))
 			return
 		}
 
@@ -210,33 +210,7 @@ func (h ProductHandler) Import() gin.HandlerFunc {
 	}
 }
 
-func (h ProductHandler) parsePage(c *gin.Context) (domain.Page, error) {
-	page := domain.DefaultPage()
-
-	if pageString := c.Query("page"); pageString != "" {
-		n, err := strconv.Atoi(pageString)
-		if err != nil {
-			return domain.Page{}, domain.WrapInvalidInput(err, "page must be a positive integer")
-		}
-		page.Number = n
-	}
-
-	if sizeString := c.Query("page_size"); sizeString != "" {
-		n, err := strconv.Atoi(sizeString)
-		if err != nil {
-			return domain.Page{}, domain.WrapInvalidInput(err, "page_size must be a positive integer")
-		}
-		page.Size = n
-	}
-
-	if err := page.Validate(); err != nil {
-		return domain.Page{}, domain.WrapInvalidInput(err, "invalid pagination")
-	}
-
-	return page, nil
-}
-
-func (h ProductHandler) parseFilter(c *gin.Context) (domain.ProductFilter, error) {
+func (h ProductHandler) parseFilter(c *gin.Context) (domain.ProductFilter, map[string]string) {
 	filter := domain.ProductFilter{
 		Query:    strings.TrimSpace(c.Query("q")),
 		Category: strings.TrimSpace(c.Query("category")),
@@ -265,9 +239,32 @@ func (h ProductHandler) parseFilter(c *gin.Context) (domain.ProductFilter, error
 		problems[field] = code
 	}
 
-	if len(problems) > 0 {
-		return domain.ProductFilter{}, domain.WrapValidation(errInvalidProductFilter, problems)
+	return filter, problems
+}
+
+func (h ProductHandler) parsePagination(c *gin.Context, filter domain.ProductFilter) (domain.PageRequest, map[string]string) {
+	page := domain.DefaultPageRequest()
+	problems := map[string]string{}
+
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil {
+			problems["limit"] = "must_be_between_1_and_100"
+		} else if code, ok := domain.ValidateLimit(n); !ok {
+			problems["limit"] = code
+		} else {
+			page.Limit = n
+		}
 	}
 
-	return filter, nil
+	if raw := strings.TrimSpace(c.Query("cursor")); raw != "" {
+		cursor, err := domain.DecodeCursor(raw, filter.EffectiveSort())
+		if err != nil {
+			problems["cursor"] = "invalid_cursor"
+		} else {
+			page.Cursor = &cursor
+		}
+	}
+
+	return page, problems
 }

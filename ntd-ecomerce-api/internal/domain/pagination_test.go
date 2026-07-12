@@ -8,60 +8,21 @@ import (
 	"ntd-ecomerce-api/internal/domain"
 )
 
-func TestPage_Validate(t *testing.T) {
-	type (
-		input struct {
-			page domain.Page
-		}
-		expected struct {
-			err error
-		}
-	)
+func TestDefaultPageRequest(t *testing.T) {
+	page := domain.DefaultPageRequest()
 
-	tests := map[string]struct {
-		input    input
-		expected expected
-	}{
-		"should accept the default page": {
-			input:    input{page: domain.DefaultPage()},
-			expected: expected{err: nil},
-		},
-		"should accept page_size at the max bound": {
-			input:    input{page: domain.Page{Number: 1, Size: domain.MaxPageSize}},
-			expected: expected{err: nil},
-		},
-		"should reject page number below 1": {
-			input:    input{page: domain.Page{Number: 0, Size: 20}},
-			expected: expected{err: domain.ErrInvalidPagination},
-		},
-		"should reject page_size below 1": {
-			input:    input{page: domain.Page{Number: 1, Size: 0}},
-			expected: expected{err: domain.ErrInvalidPagination},
-		},
-		"should reject page_size above the max bound": {
-			input:    input{page: domain.Page{Number: 1, Size: domain.MaxPageSize + 1}},
-			expected: expected{err: domain.ErrInvalidPagination},
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			page := tc.input.page
-
-			err := page.Validate()
-
-			assert.ErrorIs(t, err, tc.expected.err)
-		})
-	}
+	assert.Equal(t, domain.DefaultLimit, page.Limit)
+	assert.Nil(t, page.Cursor)
 }
 
-func TestPage_Offset(t *testing.T) {
+func TestValidateLimit(t *testing.T) {
 	type (
 		input struct {
-			page domain.Page
+			limit int
 		}
 		expected struct {
-			offset int
+			code string
+			ok   bool
 		}
 	)
 
@@ -69,23 +30,34 @@ func TestPage_Offset(t *testing.T) {
 		input    input
 		expected expected
 	}{
-		"should return 0 for the first page": {
-			input:    input{page: domain.Page{Number: 1, Size: 20}},
-			expected: expected{offset: 0},
+		"should reject 0": {
+			input:    input{limit: 0},
+			expected: expected{code: "must_be_between_1_and_100", ok: false},
 		},
-		"should return page_size steps for later pages": {
-			input:    input{page: domain.Page{Number: 2, Size: 20}},
-			expected: expected{offset: 20},
+		"should accept 1": {
+			input:    input{limit: 1},
+			expected: expected{code: "", ok: true},
+		},
+		"should accept 100": {
+			input:    input{limit: 100},
+			expected: expected{code: "", ok: true},
+		},
+		"should reject 101": {
+			input:    input{limit: 101},
+			expected: expected{code: "must_be_between_1_and_100", ok: false},
+		},
+		"should reject a negative limit": {
+			input:    input{limit: -1},
+			expected: expected{code: "must_be_between_1_and_100", ok: false},
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			page := tc.input.page
+			code, ok := domain.ValidateLimit(tc.input.limit)
 
-			offset := page.Offset()
-
-			assert.Equal(t, tc.expected.offset, offset)
+			assert.Equal(t, tc.expected.code, code)
+			assert.Equal(t, tc.expected.ok, ok)
 		})
 	}
 }

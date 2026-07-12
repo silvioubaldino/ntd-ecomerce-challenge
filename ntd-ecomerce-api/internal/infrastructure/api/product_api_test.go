@@ -154,59 +154,118 @@ func TestProductHandler_FindAll(t *testing.T) {
 
 	priceMin := decimal.RequireFromString("20")
 	priceMax := decimal.RequireFromString("50")
+	cursorID := uuid.New()
 
 	tests := map[string]struct {
 		query     string
 		mockSetup func(mockUsecase *MockProductUsecase)
 		expected  expected
 	}{
-		"should default to page 1 size 20 when no query params are given": {
+		"should default to limit 20 with no cursor when no query params are given": {
 			query: "",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.Page{Number: 1, Size: 20}).
-					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.PageRequest{Limit: 20}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Limit: 20}}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
-		"should list the requested page": {
-			query: "?page=2&page_size=20",
+		"should list with the requested limit": {
+			query: "?limit=5",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.Page{Number: 2, Size: 20}).
+				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.PageRequest{Limit: 5}).
 					Return(domain.ProductList{
 						Data:       make([]domain.Product, 5),
-						Pagination: domain.Pagination{Page: 2, PageSize: 20, Total: 25},
+						Pagination: domain.Pagination{Limit: 5},
 					}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
-		"should respond 422 when page_size exceeds the max bound": {
-			query:     "?page_size=101",
+		"should respond 422 when limit exceeds the max bound": {
+			query:     "?limit=101",
 			mockSetup: func(_ *MockProductUsecase) {},
-			expected:  expected{status: http.StatusUnprocessableEntity},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"limit": "must_be_between_1_and_100"},
+			},
+		},
+		"should respond 422 when limit is below the min bound": {
+			query:     "?limit=0",
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"limit": "must_be_between_1_and_100"},
+			},
+		},
+		"should respond 422 when limit is not an integer": {
+			query:     "?limit=abc",
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"limit": "must_be_between_1_and_100"},
+			},
+		},
+		"should respond 422 with invalid_cursor when the cursor is undecodable": {
+			query:     "?cursor=not-a-valid-token",
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"cursor": "invalid_cursor"},
+			},
+		},
+		"should respond 422 with invalid_cursor when the cursor was issued for a different sort": {
+			query:     "?sort=name_asc&cursor=" + domain.EncodeCursor(domain.Cursor{Sort: domain.ProductSortPriceAsc, Key: "10.00", LastID: cursorID}),
+			mockSetup: func(_ *MockProductUsecase) {},
+			expected: expected{
+				status:  http.StatusUnprocessableEntity,
+				code:    "validation_error",
+				details: map[string]string{"cursor": "invalid_cursor"},
+			},
+		},
+		"should decode a valid cursor and pass it to the usecase": {
+			query: "?sort=price_asc&cursor=" + domain.EncodeCursor(domain.Cursor{Sort: domain.ProductSortPriceAsc, Key: "10.00", LastID: cursorID}),
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.ProductFilter{Sort: domain.ProductSortPriceAsc}, domain.PageRequest{
+					Limit:  20,
+					Cursor: &domain.Cursor{Sort: domain.ProductSortPriceAsc, Key: "10.00", LastID: cursorID},
+				}).Return(domain.ProductList{Pagination: domain.Pagination{Limit: 20}}, nil)
+			},
+			expected: expected{status: http.StatusOK},
+		},
+		"should ignore legacy page/page_size params and use the default limit and first page": {
+			query: "?page=2&page_size=5",
+			mockSetup: func(mockUsecase *MockProductUsecase) {
+				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.PageRequest{Limit: 20}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Limit: 20}}, nil)
+			},
+			expected: expected{status: http.StatusOK},
 		},
 		"should behave as unfiltered list when q is absent": {
 			query: "",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{Query: ""}, domain.Page{Number: 1, Size: 20}).
-					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: ""}, domain.PageRequest{Limit: 20}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Limit: 20}}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
 		"should behave as unfiltered list when q, category, price_min and sort are blank": {
 			query: "?q=%20%20%20&category=&price_min=&sort=",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.Page{Number: 1, Size: 20}).
-					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+				mockUsecase.On("FindAll", domain.ProductFilter{}, domain.PageRequest{Limit: 20}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Limit: 20}}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
 		"should pass the trimmed q to the usecase": {
 			query: "?q=%20blue%20",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{Query: "blue"}, domain.Page{Number: 1, Size: 20}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: "blue"}, domain.PageRequest{Limit: 20}).
 					Return(domain.ProductList{
 						Data:       []domain.Product{{Name: "Blue Shirt"}},
-						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 1},
+						Pagination: domain.Pagination{Limit: 20},
 					}, nil)
 			},
 			expected: expected{status: http.StatusOK},
@@ -214,21 +273,21 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should respond 200 with empty data when q has no matches": {
 			query: "?q=zzz-nomatch",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{Query: "zzz-nomatch"}, domain.Page{Number: 1, Size: 20}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: "zzz-nomatch"}, domain.PageRequest{Limit: 20}).
 					Return(domain.ProductList{
 						Data:       []domain.Product{},
-						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 0},
+						Pagination: domain.Pagination{Limit: 20},
 					}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
-		"should paginate the filtered set when q and page are given": {
-			query: "?q=shirt&page=2&page_size=20",
+		"should paginate the filtered set when q and limit are given": {
+			query: "?q=shirt&limit=5",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{Query: "shirt"}, domain.Page{Number: 2, Size: 20}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: "shirt"}, domain.PageRequest{Limit: 5}).
 					Return(domain.ProductList{
 						Data:       make([]domain.Product, 5),
-						Pagination: domain.Pagination{Page: 2, PageSize: 20, Total: 25},
+						Pagination: domain.Pagination{Limit: 5},
 					}, nil)
 			},
 			expected: expected{status: http.StatusOK},
@@ -236,24 +295,19 @@ func TestProductHandler_FindAll(t *testing.T) {
 		"should be case-insensitive by passing q through unchanged": {
 			query: "?q=BLUE",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{Query: "BLUE"}, domain.Page{Number: 1, Size: 20}).
+				mockUsecase.On("FindAll", domain.ProductFilter{Query: "BLUE"}, domain.PageRequest{Limit: 20}).
 					Return(domain.ProductList{
 						Data:       []domain.Product{{Name: "Blue Shirt"}},
-						Pagination: domain.Pagination{Page: 1, PageSize: 20, Total: 1},
+						Pagination: domain.Pagination{Limit: 20},
 					}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
-		"should respond 422 when page is invalid regardless of q": {
-			query:     "?q=blue&page=0",
-			mockSetup: func(_ *MockProductUsecase) {},
-			expected:  expected{status: http.StatusUnprocessableEntity, code: "validation_error"},
-		},
 		"should pass the trimmed category to the usecase": {
 			query: "?category=%20Apparel%20",
 			mockSetup: func(mockUsecase *MockProductUsecase) {
-				mockUsecase.On("FindAll", domain.ProductFilter{Category: "Apparel"}, domain.Page{Number: 1, Size: 20}).
-					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+				mockUsecase.On("FindAll", domain.ProductFilter{Category: "Apparel"}, domain.PageRequest{Limit: 20}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Limit: 20}}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
@@ -266,8 +320,8 @@ func TestProductHandler_FindAll(t *testing.T) {
 					PriceMin: &priceMin,
 					PriceMax: &priceMax,
 					Sort:     domain.ProductSortNameDesc,
-				}, domain.Page{Number: 1, Size: 20}).
-					Return(domain.ProductList{Pagination: domain.Pagination{Page: 1, PageSize: 20}}, nil)
+				}, domain.PageRequest{Limit: 20}).
+					Return(domain.ProductList{Pagination: domain.Pagination{Limit: 20}}, nil)
 			},
 			expected: expected{status: http.StatusOK},
 		},
