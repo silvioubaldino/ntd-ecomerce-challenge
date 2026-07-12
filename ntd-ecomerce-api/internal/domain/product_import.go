@@ -10,6 +10,9 @@ import (
 
 const MaxImportFileBytes int64 = 5 << 20 // 5 MB (AYD-002)
 
+// ImportBatchSize is the number of valid rows written per multi-row INSERT (AYD-009/SPEC-009).
+const ImportBatchSize = 500
+
 var (
 	ErrInvalidCSVHeader = errors.New("invalid csv header")
 

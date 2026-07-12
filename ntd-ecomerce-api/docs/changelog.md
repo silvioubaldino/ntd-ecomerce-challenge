@@ -19,6 +19,7 @@ CONV §B.3; that detail lives in the SPEC/TDR).
 
 ## Unreleased
 
+- Implemented SPEC-009 - CSV bulk import writes valid rows in batches instead of one insert per row, cutting import time while keeping the same import report.
 - Implemented SPEC-008 - Catalog pagination: keyset (cursor-based) pagination replaces offset paging for index-backed deep-page performance. [#27](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/27)
 - Implemented SPEC-007 - Product search performance: catalog search stays index-backed as the catalog grows. [#25](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/25)
 - Implemented SPEC-006 - Catalog filters and sorting. [#22](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/22)

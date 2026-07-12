@@ -2,6 +2,7 @@ package usecase_test
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -305,6 +306,19 @@ func productInput(name, sku, category, price string, stock int, weightKg string)
 	}
 }
 
+// batchImportRows builds n CSV data rows plus the domain.Product each row parses into,
+// in file order, so a test can slice them into the batches the usecase is expected to send.
+func batchImportRows(n int) (rows string, products []domain.Product) {
+	var sb strings.Builder
+	products = make([]domain.Product, n)
+	for i := range n {
+		sku := fmt.Sprintf("BATCH-%05d", i)
+		fmt.Fprintf(&sb, "Item %d,%s,desc,Category,9.99,10,1.00\n", i, sku)
+		products[i] = productInput(fmt.Sprintf("Item %d", i), sku, "Category", "9.99", 10, "1.00").ToProduct()
+	}
+	return sb.String(), products
+}
+
 func TestProduct_Import(t *testing.T) {
 	type (
 		input struct {
@@ -319,18 +333,20 @@ func TestProduct_Import(t *testing.T) {
 	runningShoes := productInput("Running Shoes", "RS-001", "Footwear", "89.99", 150, "0.35")
 	wirelessMouse := productInput("Wireless Mouse", "WM-042", "Electronics", "29.99", 75, "0.12")
 
+	batchRows, batchProducts := batchImportRows(domain.ImportBatchSize + 1)
+
 	tests := map[string]struct {
 		input     input
 		mockSetup func(mockRepo *MockProductRepository)
 		expected  expected
 	}{
-		"should import every valid row and report zero rejections": {
+		"should import every valid row in a single batch and report zero rejections": {
 			input: input{csv: csvHeader +
 				"Running Shoes,RS-001,desc,Footwear,89.99,150,0.35\n" +
 				"Wireless Mouse,WM-042,desc,Electronics,29.99,75,0.12\n"},
 			mockSetup: func(mockRepo *MockProductRepository) {
-				mockRepo.On("Add", runningShoes.ToProduct()).Return(domain.Product{SKU: "RS-001"}, nil)
-				mockRepo.On("Add", wirelessMouse.ToProduct()).Return(domain.Product{SKU: "WM-042"}, nil)
+				mockRepo.On("AddBatch", []domain.Product{runningShoes.ToProduct(), wirelessMouse.ToProduct()}).
+					Return([]domain.Product{{SKU: "RS-001"}, {SKU: "WM-042"}}, []string(nil), nil)
 			},
 			expected: expected{
 				report: domain.ImportReport{
@@ -340,12 +356,13 @@ func TestProduct_Import(t *testing.T) {
 				err: nil,
 			},
 		},
-		"should reject an invalid row without calling the repository and still import the valid one": {
+		"should reject an invalid row without buffering it and still import the valid one": {
 			input: input{csv: csvHeader +
 				",HD-099,desc,Electronics,149.99,30,0.25\n" +
 				"Running Shoes,RS-001,desc,Footwear,89.99,150,0.35\n"},
 			mockSetup: func(mockRepo *MockProductRepository) {
-				mockRepo.On("Add", runningShoes.ToProduct()).Return(domain.Product{SKU: "RS-001"}, nil)
+				mockRepo.On("AddBatch", []domain.Product{runningShoes.ToProduct()}).
+					Return([]domain.Product{{SKU: "RS-001"}}, []string(nil), nil)
 			},
 			expected: expected{
 				report: domain.ImportReport{
@@ -357,11 +374,29 @@ func TestProduct_Import(t *testing.T) {
 				err: nil,
 			},
 		},
-		"should report duplicate_sku when the repository rejects a unique violation": {
+		"should reject an in-file duplicate sku before it reaches the batch": {
+			input: input{csv: csvHeader +
+				"Running Shoes,RS-001,desc,Footwear,89.99,150,0.35\n" +
+				"Running Shoes 2,RS-001,desc,Footwear,79.99,50,0.30\n"},
+			mockSetup: func(mockRepo *MockProductRepository) {
+				mockRepo.On("AddBatch", []domain.Product{runningShoes.ToProduct()}).
+					Return([]domain.Product{{SKU: "RS-001"}}, []string(nil), nil)
+			},
+			expected: expected{
+				report: domain.ImportReport{
+					Summary: domain.ImportSummary{Total: 2, Imported: 1, Rejected: 1},
+					Rejected: []domain.RejectedRow{
+						{Row: 2, SKU: "RS-001", Errors: map[string]string{"sku": "duplicate_sku"}},
+					},
+				},
+				err: nil,
+			},
+		},
+		"should report duplicate_sku when the repository finds the sku already in the database": {
 			input: input{csv: csvHeader + "Running Shoes,RS-001,desc,Footwear,89.99,150,0.35\n"},
 			mockSetup: func(mockRepo *MockProductRepository) {
-				mockRepo.On("Add", runningShoes.ToProduct()).
-					Return(domain.Product{}, domain.WrapConflict(assert.AnError, "sku_already_exists", "sku already exists"))
+				mockRepo.On("AddBatch", []domain.Product{runningShoes.ToProduct()}).
+					Return(nil, []string{"RS-001"}, nil)
 			},
 			expected: expected{
 				report: domain.ImportReport{
@@ -373,10 +408,11 @@ func TestProduct_Import(t *testing.T) {
 				err: nil,
 			},
 		},
-		"should return the error when the repository fails for a non-conflict reason": {
+		"should return the error when the repository fails for a batch": {
 			input: input{csv: csvHeader + "Running Shoes,RS-001,desc,Footwear,89.99,150,0.35\n"},
 			mockSetup: func(mockRepo *MockProductRepository) {
-				mockRepo.On("Add", runningShoes.ToProduct()).Return(domain.Product{}, assert.AnError)
+				mockRepo.On("AddBatch", []domain.Product{runningShoes.ToProduct()}).
+					Return(nil, nil, assert.AnError)
 			},
 			expected: expected{
 				report: domain.ImportReport{},
@@ -389,6 +425,26 @@ func TestProduct_Import(t *testing.T) {
 			expected: expected{
 				report: domain.ImportReport{},
 				err:    domain.ErrInvalidCSVHeader,
+			},
+		},
+		"should split rows into multiple batches when the file exceeds the batch size": {
+			input: input{csv: csvHeader + batchRows},
+			mockSetup: func(mockRepo *MockProductRepository) {
+				mockRepo.On("AddBatch", batchProducts[:domain.ImportBatchSize]).
+					Return(batchProducts[:domain.ImportBatchSize], []string(nil), nil)
+				mockRepo.On("AddBatch", batchProducts[domain.ImportBatchSize:]).
+					Return(batchProducts[domain.ImportBatchSize:], []string(nil), nil)
+			},
+			expected: expected{
+				report: domain.ImportReport{
+					Summary: domain.ImportSummary{
+						Total:    len(batchProducts),
+						Imported: len(batchProducts),
+						Rejected: 0,
+					},
+					Rejected: []domain.RejectedRow{},
+				},
+				err: nil,
 			},
 		},
 	}

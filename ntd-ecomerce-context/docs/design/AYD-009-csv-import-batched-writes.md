@@ -1,7 +1,7 @@
 ---
 id: AYD-009
 type: design
-status: draft
+status: approved
 updated: 2026-07-12
 parents: [RNF-03]
 children: [SPEC-009@api]
