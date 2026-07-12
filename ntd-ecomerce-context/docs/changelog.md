@@ -3,7 +3,7 @@ id: CHANGELOG-context
 type: changelog
 title: Changelog — context
 status: approved
-updated: 2026-07-10
+updated: 2026-07-12
 ---
 
 # Changelog — context
@@ -29,6 +29,7 @@ that lives in the SPEC/TDR/PR); reference the PR when useful. See CONV §B.3.
 
 ## Unreleased
 
+- Created AYD-009 (batched CSV import writes) with the new RNF-03 requirement: the bulk import writes valid rows in batches instead of one insert per row, with the import contract unchanged.
 - Created AYD-008 (keyset cursor-based catalog pagination): supersedes the offset paging and total count of the product list contract; linked SPEC-008@api and SPEC-008@web. [#26](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/26)
 - Created AYD-007 (Product search performance optimization) with index-backed search and the new RNF-02 requirement. [#24](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/24)
 - Approved AYD-006 - Catalog filters and sorting. [#21](https://github.com/silvioubaldino/ntd-ecomerce-challenge/pull/21)
