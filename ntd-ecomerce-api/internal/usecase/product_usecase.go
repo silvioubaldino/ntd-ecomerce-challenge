@@ -16,6 +16,7 @@ import (
 type (
 	ProductRepository interface {
 		Add(ctx context.Context, product domain.Product) (domain.Product, error)
+		AddBatch(ctx context.Context, products []domain.Product) (inserted []domain.Product, duplicateSKUs []string, err error)
 		FindAll(ctx context.Context, filter domain.ProductFilter, page domain.PageRequest) (domain.ProductList, error)
 		FindByID(ctx context.Context, id uuid.UUID) (domain.Product, error)
 		Update(ctx context.Context, product domain.Product) (domain.Product, error)
@@ -98,6 +99,11 @@ func (u *Product) DeleteOne(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
+type importBufferedRow struct {
+	rowNum int
+	input  domain.ProductInput
+}
+
 func (u *Product) Import(ctx context.Context, r io.Reader) (domain.ImportReport, error) {
 	reader := csv.NewReader(r)
 	reader.FieldsPerRecord = -1
@@ -111,6 +117,8 @@ func (u *Product) Import(ctx context.Context, r io.Reader) (domain.ImportReport,
 	}
 
 	report := domain.ImportReport{Rejected: []domain.RejectedRow{}}
+	seenSKUs := make(map[string]struct{})
+	batch := make([]importBufferedRow, 0, domain.ImportBatchSize)
 
 	rowNum := 0
 	for {
@@ -131,21 +139,65 @@ func (u *Product) Import(ctx context.Context, r io.Reader) (domain.ImportReport,
 			continue
 		}
 
-		if _, err := u.repo.Add(ctx, input.ToProduct()); err != nil {
-			if errors.Is(err, domain.ErrConflict) {
-				report.Summary.Rejected++
-				report.Rejected = append(report.Rejected, domain.RejectedRow{
-					Row:    rowNum,
-					SKU:    input.SKU,
-					Errors: map[string]string{"sku": "duplicate_sku"},
-				})
-				continue
-			}
-			return domain.ImportReport{}, fmt.Errorf("importing csv row %d: %w", rowNum, err)
+		if _, dup := seenSKUs[input.SKU]; dup {
+			report.Summary.Rejected++
+			report.Rejected = append(report.Rejected, domain.RejectedRow{
+				Row:    rowNum,
+				SKU:    input.SKU,
+				Errors: map[string]string{"sku": "duplicate_sku"},
+			})
+			continue
 		}
+		seenSKUs[input.SKU] = struct{}{}
 
-		report.Summary.Imported++
+		batch = append(batch, importBufferedRow{rowNum: rowNum, input: input})
+		if len(batch) == domain.ImportBatchSize {
+			if err := u.flushImportBatch(ctx, &report, batch); err != nil {
+				return domain.ImportReport{}, err
+			}
+			batch = batch[:0]
+		}
+	}
+
+	if err := u.flushImportBatch(ctx, &report, batch); err != nil {
+		return domain.ImportReport{}, err
 	}
 
 	return report, nil
+}
+
+func (u *Product) flushImportBatch(ctx context.Context, report *domain.ImportReport, batch []importBufferedRow) error {
+	if len(batch) == 0 {
+		return nil
+	}
+
+	products := make([]domain.Product, len(batch))
+	for i, row := range batch {
+		products[i] = row.input.ToProduct()
+	}
+
+	_, duplicateSKUs, err := u.repo.AddBatch(ctx, products)
+	if err != nil {
+		return fmt.Errorf("importing csv batch ending at row %d: %w", batch[len(batch)-1].rowNum, err)
+	}
+
+	duplicates := make(map[string]struct{}, len(duplicateSKUs))
+	for _, sku := range duplicateSKUs {
+		duplicates[sku] = struct{}{}
+	}
+
+	for _, row := range batch {
+		if _, dup := duplicates[row.input.SKU]; dup {
+			report.Summary.Rejected++
+			report.Rejected = append(report.Rejected, domain.RejectedRow{
+				Row:    row.rowNum,
+				SKU:    row.input.SKU,
+				Errors: map[string]string{"sku": "duplicate_sku"},
+			})
+			continue
+		}
+		report.Summary.Imported++
+	}
+
+	return nil
 }

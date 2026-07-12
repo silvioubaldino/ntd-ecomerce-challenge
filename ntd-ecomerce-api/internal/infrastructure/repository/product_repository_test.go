@@ -91,6 +91,112 @@ func TestProductRepository_Add(t *testing.T) {
 	}
 }
 
+func fixtureProduct2() domain.Product {
+	return domain.Product{
+		Name:        "Wireless Mouse",
+		SKU:         "WM-042",
+		Description: "Ergonomic wireless mouse",
+		Category:    "Electronics",
+		Price:       decimal.NewFromFloat(29.99),
+		Stock:       75,
+		WeightKg:    decimal.NewFromFloat(0.12),
+	}
+}
+
+func TestProductRepository_AddBatch(t *testing.T) {
+	type (
+		input struct {
+			products []domain.Product
+		}
+		expected struct {
+			insertedLen   int
+			duplicateSKUs []string
+			err           error
+		}
+	)
+
+	tests := map[string]struct {
+		// input
+		input input
+		// mocks
+		mockSetup func(mock sqlmock.Sqlmock)
+		// expected
+		expected expected
+	}{
+		"should return nil results without querying when the batch is empty": {
+			input:     input{products: nil},
+			mockSetup: func(_ sqlmock.Sqlmock) {},
+			expected:  expected{insertedLen: 0, duplicateSKUs: nil, err: nil},
+		},
+		"should insert every product when no sku already exists": {
+			input: input{products: []domain.Product{fixtureProduct(), fixtureProduct2()}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT "sku" FROM "products" WHERE sku IN`).
+					WillReturnRows(sqlmock.NewRows([]string{"sku"}))
+				mock.ExpectQuery(`INSERT INTO "products"`).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
+						AddRow(uuid.New(), time.Now(), time.Now()).
+						AddRow(uuid.New(), time.Now(), time.Now()))
+			},
+			expected: expected{insertedLen: 2, duplicateSKUs: nil, err: nil},
+		},
+		"should exclude an already-existing sku from the insert and report it as a duplicate": {
+			input: input{products: []domain.Product{fixtureProduct(), fixtureProduct2()}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT "sku" FROM "products" WHERE sku IN`).
+					WillReturnRows(sqlmock.NewRows([]string{"sku"}).AddRow("RS-001"))
+				mock.ExpectQuery(`INSERT INTO "products"`).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at"}).
+						AddRow(uuid.New(), time.Now(), time.Now()))
+			},
+			expected: expected{insertedLen: 1, duplicateSKUs: []string{"RS-001"}, err: nil},
+		},
+		"should insert nothing and report every sku as a duplicate when all already exist": {
+			input: input{products: []domain.Product{fixtureProduct()}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT "sku" FROM "products" WHERE sku IN`).
+					WillReturnRows(sqlmock.NewRows([]string{"sku"}).AddRow("RS-001"))
+			},
+			expected: expected{insertedLen: 0, duplicateSKUs: []string{"RS-001"}, err: nil},
+		},
+		"should return error when checking existing skus fails": {
+			input: input{products: []domain.Product{fixtureProduct()}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT "sku" FROM "products" WHERE sku IN`).
+					WillReturnError(assert.AnError)
+			},
+			expected: expected{insertedLen: 0, duplicateSKUs: nil, err: assert.AnError},
+		},
+		"should return error when the insert fails for a non-conflict reason": {
+			input: input{products: []domain.Product{fixtureProduct()}},
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT "sku" FROM "products" WHERE sku IN`).
+					WillReturnRows(sqlmock.NewRows([]string{"sku"}))
+				mock.ExpectQuery(`INSERT INTO "products"`).
+					WillReturnError(assert.AnError)
+			},
+			expected: expected{insertedLen: 0, duplicateSKUs: nil, err: assert.AnError},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Arrange
+			repo, mock := newTestRepo(t)
+			tc.mockSetup(mock)
+
+			// Act
+			inserted, duplicateSKUs, err := repo.AddBatch(context.Background(), tc.input.products)
+
+			// Assert
+			assert.ErrorIs(t, err, tc.expected.err)
+			assert.Len(t, inserted, tc.expected.insertedLen)
+			assert.Equal(t, tc.expected.duplicateSKUs, duplicateSKUs)
+			assert.NoError(t, mock.ExpectationsWereMet())
+		})
+	}
+}
+
 func TestProductRepository_FindAll(t *testing.T) {
 	type (
 		input struct {

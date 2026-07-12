@@ -3,7 +3,7 @@ id: REQ-01
 type: requirements
 title: Requirements and glossary
 status: approved
-updated: 2026-07-10
+updated: 2026-07-12
 parents: []
 children: []
 related: [GLO]
@@ -27,6 +27,7 @@ related: [GLO]
 |----|----------|-----------|------|
 | RNF-01 | Deployment | The application must be runnable as a Docker container | `docker run` / `docker compose` starts the full stack (web, api, db) locally |
 | RNF-02 | Performance | Product catalog search and filtering (RF-03, RF-05) must stay index-backed as the catalog grows | `GET /products` with `q`/filters is served by index scans (no full-table sequential scan), verified via query plan on a large seeded catalog |
+| RNF-03 | Performance | Bulk CSV import (RF-02) must write valid rows in batches, not one database write per row | `POST /products/import` of a max-size CSV issues insert statements proportional to the number of batches (not the number of rows), verified on a large import |
 
 ## Business rules
 - RN-01: A Product imported via CSV maps the columns `name` (string), `sku` (string), `description` (string), `category` (string), `price` (decimal), `stock` (integer), `weight_kg` (decimal), per the reference sample file `NTD Code Challenge E-Commerce.csv` (project root).

@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const uniqueViolationCode = "23505"
@@ -81,6 +82,52 @@ func (r *ProductRepository) Add(ctx context.Context, product domain.Product) (do
 	}
 
 	return model.toDomain(), nil
+}
+
+func (r *ProductRepository) AddBatch(ctx context.Context, products []domain.Product) (inserted []domain.Product, duplicateSKUs []string, err error) {
+	if len(products) == 0 {
+		return nil, nil, nil
+	}
+
+	skus := make([]string, len(products))
+	for i, p := range products {
+		skus[i] = p.SKU
+	}
+
+	var existing []string
+	if err := r.db.WithContext(ctx).Model(&productModel{}).Where("sku IN ?", skus).Pluck("sku", &existing).Error; err != nil {
+		return nil, nil, fmt.Errorf("checking existing skus: %w", err)
+	}
+	existingSKUs := make(map[string]struct{}, len(existing))
+	for _, sku := range existing {
+		existingSKUs[sku] = struct{}{}
+	}
+
+	now := time.Now().UTC()
+	models := make([]productModel, 0, len(products))
+	for _, p := range products {
+		if _, ok := existingSKUs[p.SKU]; ok {
+			duplicateSKUs = append(duplicateSKUs, p.SKU)
+			continue
+		}
+		model := fromDomain(p)
+		model.CreatedAt = now
+		model.UpdatedAt = now
+		models = append(models, model)
+	}
+
+	if len(models) > 0 {
+		if err := r.db.WithContext(ctx).Clauses(clause.OnConflict{DoNothing: true}).Create(&models).Error; err != nil {
+			return nil, nil, translateWriteErr(err)
+		}
+	}
+
+	inserted = make([]domain.Product, 0, len(models))
+	for _, model := range models {
+		inserted = append(inserted, model.toDomain())
+	}
+
+	return inserted, duplicateSKUs, nil
 }
 
 func (r *ProductRepository) FindAll(ctx context.Context, filter domain.ProductFilter, page domain.PageRequest) (domain.ProductList, error) {
