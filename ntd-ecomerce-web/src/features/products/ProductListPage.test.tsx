@@ -7,13 +7,21 @@ import { renderWithProviders } from "../../test/utils";
 import { makeProduct } from "../../test/handlers";
 
 describe("ProductListPage", () => {
-  it("lists products with pagination and page controls that change the page", async () => {
+  it("lists products with Prev/Next controls driven by cursors", async () => {
+    let requestedCursor: string | null | undefined;
     server.use(
       http.get("/api/products", ({ request }) => {
-        const page = Number(new URL(request.url).searchParams.get("page"));
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        requestedCursor = cursor;
+        if (!cursor) {
+          return HttpResponse.json({
+            data: [makeProduct({ name: "Page 1 product" })],
+            pagination: { limit: 20, next_cursor: "idx:1" },
+          });
+        }
         return HttpResponse.json({
-          data: [makeProduct({ name: `Page ${page} product` })],
-          pagination: { page, page_size: 20, total: 45 },
+          data: [makeProduct({ name: "Page 2 product" })],
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );
@@ -22,18 +30,32 @@ describe("ProductListPage", () => {
 
     expect(await screen.findByText("Page 1 product")).toBeInTheDocument();
     expect(screen.getByText("19.90")).toBeInTheDocument();
-    expect(screen.getByText("Page 1 of 3 (45 total)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
 
     await userEvent.click(screen.getByRole("button", { name: "Next" }));
 
     expect(await screen.findByText("Page 2 product")).toBeInTheDocument();
-    expect(screen.getByText("Page 2 of 3 (45 total)")).toBeInTheDocument();
+    expect(requestedCursor).toBe("idx:1");
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+
+    expect(await screen.findByText("Page 1 product")).toBeInTheDocument();
+    expect(requestedCursor).toBeNull();
+  });
+
+  it("never renders page numbers or a total count", async () => {
+    renderWithProviders(<App />, { route: "/products" });
+    await screen.findByText("Widget");
+
+    expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/total\)/)).not.toBeInTheDocument();
   });
 
   it("shows an empty-state message instead of a table when the catalog is empty", async () => {
     server.use(
       http.get("/api/products", () =>
-        HttpResponse.json({ data: [], pagination: { page: 1, page_size: 20, total: 0 } }),
+        HttpResponse.json({ data: [], pagination: { limit: 20, next_cursor: null } }),
       ),
     );
 
@@ -49,7 +71,7 @@ describe("ProductListPage", () => {
       http.get("/api/products", () =>
         HttpResponse.json({
           data: products,
-          pagination: { page: 1, page_size: 20, total: products.length },
+          pagination: { limit: 20, next_cursor: null },
         }),
       ),
       http.delete("/api/products/:id", ({ params }) => {
@@ -76,7 +98,7 @@ describe("ProductListPage", () => {
         if (failed) return new HttpResponse(null, { status: 500 });
         return HttpResponse.json({
           data: [makeProduct()],
-          pagination: { page: 1, page_size: 20, total: 1 },
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );

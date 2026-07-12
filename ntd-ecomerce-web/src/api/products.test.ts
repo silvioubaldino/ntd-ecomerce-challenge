@@ -3,20 +3,20 @@ import { server } from "../test/server";
 import { listCategories, listProducts } from "./products";
 
 describe("listProducts", () => {
-  it("sends only page and page_size when no filters are given", async () => {
+  it("sends only limit when no cursor or filters are given", async () => {
     let query: string | undefined;
     server.use(
       http.get("/api/products", ({ request }) => {
         query = new URL(request.url).search;
-        return HttpResponse.json({ data: [], pagination: { page: 1, page_size: 20, total: 0 } });
+        return HttpResponse.json({ data: [], pagination: { limit: 20, next_cursor: null } });
       }),
     );
 
-    await listProducts({ page: 1 });
+    await listProducts({});
 
     const params = new URLSearchParams(query);
-    expect(params.get("page")).toBe("1");
-    expect(params.get("page_size")).toBe("20");
+    expect(params.get("limit")).toBe("20");
+    expect(params.has("cursor")).toBe(false);
     expect(params.has("q")).toBe(false);
     expect(params.has("category")).toBe(false);
     expect(params.has("price_min")).toBe(false);
@@ -29,11 +29,11 @@ describe("listProducts", () => {
     server.use(
       http.get("/api/products", ({ request }) => {
         query = new URL(request.url).search;
-        return HttpResponse.json({ data: [], pagination: { page: 1, page_size: 20, total: 0 } });
+        return HttpResponse.json({ data: [], pagination: { limit: 20, next_cursor: null } });
       }),
     );
 
-    await listProducts({ page: 1, q: "  ", category: "  ", priceMin: "", priceMax: "  " });
+    await listProducts({ q: "  ", category: "  ", priceMin: "", priceMax: "  " });
 
     const params = new URLSearchParams(query);
     expect(params.has("q")).toBe(false);
@@ -42,18 +42,18 @@ describe("listProducts", () => {
     expect(params.has("price_max")).toBe(false);
   });
 
-  it("sends trimmed q, category, price_min, price_max and sort verbatim", async () => {
+  it("sends cursor, trimmed q, category, price_min, price_max and sort verbatim", async () => {
     let query: string | undefined;
     server.use(
       http.get("/api/products", ({ request }) => {
         query = new URL(request.url).search;
-        return HttpResponse.json({ data: [], pagination: { page: 1, page_size: 20, total: 0 } });
+        return HttpResponse.json({ data: [], pagination: { limit: 10, next_cursor: null } });
       }),
     );
 
     await listProducts({
-      page: 2,
-      pageSize: 10,
+      cursor: "abc123",
+      limit: 10,
       q: "  shirt  ",
       category: " Apparel ",
       priceMin: "10",
@@ -62,13 +62,28 @@ describe("listProducts", () => {
     });
 
     const params = new URLSearchParams(query);
-    expect(params.get("page")).toBe("2");
-    expect(params.get("page_size")).toBe("10");
+    expect(params.get("cursor")).toBe("abc123");
+    expect(params.get("limit")).toBe("10");
     expect(params.get("q")).toBe("shirt");
     expect(params.get("category")).toBe("Apparel");
     expect(params.get("price_min")).toBe("10");
     expect(params.get("price_max")).toBe("50");
     expect(params.get("sort")).toBe("price_asc");
+  });
+
+  it("omits cursor when absent", async () => {
+    let query: string | undefined;
+    server.use(
+      http.get("/api/products", ({ request }) => {
+        query = new URL(request.url).search;
+        return HttpResponse.json({ data: [], pagination: { limit: 20, next_cursor: null } });
+      }),
+    );
+
+    await listProducts({ q: "shirt" });
+
+    const params = new URLSearchParams(query);
+    expect(params.has("cursor")).toBe(false);
   });
 });
 

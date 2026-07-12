@@ -1,10 +1,36 @@
 import { http, HttpResponse } from "msw";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter, useNavigate } from "react-router-dom";
 import App from "../../App";
 import { server } from "../../test/server";
 import { renderWithProviders } from "../../test/utils";
 import { makeProduct } from "../../test/handlers";
+
+function BackButton() {
+  const navigate = useNavigate();
+  return (
+    <button type="button" onClick={() => navigate(-1)}>
+      Simulate browser back
+    </button>
+  );
+}
+
+function renderWithBackButton(route: string) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter
+        initialEntries={[route]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <BackButton />
+        <App />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
 
 describe("StoreSearchPage", () => {
   it("shows the full catalog when the search term is blank", async () => {
@@ -14,7 +40,7 @@ describe("StoreSearchPage", () => {
         expect(q).toBeNull();
         return HttpResponse.json({
           data: [makeProduct({ name: "Widget" })],
-          pagination: { page: 1, page_size: 20, total: 1 },
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );
@@ -30,7 +56,7 @@ describe("StoreSearchPage", () => {
         const q = new URL(request.url).searchParams.get("q");
         return HttpResponse.json({
           data: q ? [makeProduct({ name: `${q} sneakers` })] : [makeProduct()],
-          pagination: { page: 1, page_size: 20, total: q ? 1 : 1 },
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );
@@ -50,12 +76,12 @@ describe("StoreSearchPage", () => {
         if (q) {
           return HttpResponse.json({
             data: [],
-            pagination: { page: 1, page_size: 20, total: 0 },
+            pagination: { limit: 20, next_cursor: null },
           });
         }
         return HttpResponse.json({
           data: [makeProduct()],
-          pagination: { page: 1, page_size: 20, total: 1 },
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );
@@ -69,38 +95,13 @@ describe("StoreSearchPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("walks pagination of the filtered set, keeping q and using the filtered total", async () => {
-    server.use(
-      http.get("/api/products", ({ request }) => {
-        const url = new URL(request.url);
-        const q = url.searchParams.get("q");
-        const page = Number(url.searchParams.get("page") ?? "1");
-        expect(q).toBe("blue");
-        return HttpResponse.json({
-          data: [makeProduct({ name: `blue page ${page}` })],
-          pagination: { page, page_size: 20, total: 45 },
-        });
-      }),
-    );
-
-    renderWithProviders(<App />, { route: "/store?q=blue" });
-
-    expect(await screen.findByText("blue page 1")).toBeInTheDocument();
-    expect(screen.getByText("Page 1 of 3 (45 total)")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "Next" }));
-
-    expect(await screen.findByText("blue page 2")).toBeInTheDocument();
-    expect(screen.getByText("Page 2 of 3 (45 total)")).toBeInTheDocument();
-  });
-
   it("reflects the search term in the URL and pre-fills the input on reload", async () => {
     server.use(
       http.get("/api/products", ({ request }) => {
         const q = new URL(request.url).searchParams.get("q");
         return HttpResponse.json({
           data: q ? [makeProduct({ name: `${q} match` })] : [makeProduct()],
-          pagination: { page: 1, page_size: 20, total: 1 },
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );
@@ -125,7 +126,7 @@ describe("StoreSearchPage", () => {
         const q = new URL(request.url).searchParams.get("q");
         return HttpResponse.json({
           data: q ? [makeProduct({ name: `${q} match` })] : [makeProduct({ name: "Widget" })],
-          pagination: { page: 1, page_size: 20, total: 1 },
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );
@@ -138,6 +139,246 @@ describe("StoreSearchPage", () => {
 
     expect(await screen.findByText("Widget")).toBeInTheDocument();
     expect(input).toHaveValue("");
+  });
+});
+
+describe("StoreSearchPage — keyset pagination (SPEC-008)", () => {
+  it("loads the first page without a cursor and disables Prev", async () => {
+    let requestedCursor: string | null | undefined;
+    server.use(
+      http.get("/api/products", ({ request }) => {
+        requestedCursor = new URL(request.url).searchParams.get("cursor");
+        return HttpResponse.json({
+          data: [makeProduct({ name: "Widget" })],
+          pagination: { limit: 20, next_cursor: "idx:1" },
+        });
+      }),
+    );
+
+    renderWithProviders(<App />, { route: "/store" });
+
+    expect(await screen.findByText("Widget")).toBeInTheDocument();
+    expect(requestedCursor).toBeNull();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+  });
+
+  it("requests the next page with the returned cursor when Next is clicked", async () => {
+    let requestedCursor: string | null | undefined;
+    server.use(
+      http.get("/api/products", ({ request }) => {
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        requestedCursor = cursor;
+        if (!cursor) {
+          return HttpResponse.json({
+            data: [makeProduct({ name: "Page 1 item" })],
+            pagination: { limit: 20, next_cursor: "idx:1" },
+          });
+        }
+        return HttpResponse.json({
+          data: [makeProduct({ name: "Page 2 item" })],
+          pagination: { limit: 20, next_cursor: null },
+        });
+      }),
+    );
+
+    renderWithProviders(<App />, { route: "/store" });
+    await screen.findByText("Page 1 item");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    expect(await screen.findByText("Page 2 item")).toBeInTheDocument();
+    expect(requestedCursor).toBe("idx:1");
+  });
+
+  it("disables Next and fires no request when next_cursor is null", async () => {
+    let requestCount = 0;
+    server.use(
+      http.get("/api/products", () => {
+        requestCount += 1;
+        return HttpResponse.json({
+          data: [makeProduct()],
+          pagination: { limit: 20, next_cursor: null },
+        });
+      }),
+    );
+
+    renderWithProviders(<App />, { route: "/store" });
+    await screen.findByText("Widget");
+    const countAfterLoad = requestCount;
+
+    const nextButton = screen.getByRole("button", { name: "Next" });
+    expect(nextButton).toBeDisabled();
+
+    await userEvent.click(nextButton);
+    expect(requestCount).toBe(countAfterLoad);
+  });
+
+  it("walks Next then Prev through the client-held cursor stack", async () => {
+    server.use(
+      http.get("/api/products", ({ request }) => {
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        if (!cursor) {
+          return HttpResponse.json({
+            data: [makeProduct({ name: "Item A" })],
+            pagination: { limit: 20, next_cursor: "idx:1" },
+          });
+        }
+        if (cursor === "idx:1") {
+          return HttpResponse.json({
+            data: [makeProduct({ name: "Item B" })],
+            pagination: { limit: 20, next_cursor: "idx:2" },
+          });
+        }
+        return HttpResponse.json({
+          data: [makeProduct({ name: "Item C" })],
+          pagination: { limit: 20, next_cursor: null },
+        });
+      }),
+    );
+
+    renderWithProviders(<App />, { route: "/store" });
+    await screen.findByText("Item A");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Item B")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(await screen.findByText("Item C")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(await screen.findByText("Item B")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+    expect(await screen.findByText("Item A")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+  });
+
+  it("resets the cursor and stack when the search term changes on a later page", async () => {
+    let lastCursor: string | null = null;
+    server.use(
+      http.get("/api/products", ({ request }) => {
+        const url = new URL(request.url);
+        lastCursor = url.searchParams.get("cursor");
+        const q = url.searchParams.get("q");
+        if (!lastCursor) {
+          return HttpResponse.json({
+            data: [makeProduct({ name: q ? `${q} item 1` : "item 1" })],
+            pagination: { limit: 20, next_cursor: "idx:1" },
+          });
+        }
+        return HttpResponse.json({
+          data: [makeProduct({ name: q ? `${q} item 2` : "item 2" })],
+          pagination: { limit: 20, next_cursor: null },
+        });
+      }),
+    );
+
+    renderWithProviders(<App />, { route: "/store" });
+    await screen.findByText("item 1");
+
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByText("item 2");
+
+    await userEvent.type(screen.getByLabelText("Search products"), "blue");
+
+    expect(await screen.findByText("blue item 1")).toBeInTheDocument();
+    await waitFor(() => expect(lastCursor).toBeNull());
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+  });
+
+  it("never renders page numbers or a total count", async () => {
+    renderWithProviders(<App />, { route: "/store" });
+    await screen.findByText("Widget");
+
+    expect(screen.queryByText(/Page \d+ of \d+/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/total\)/)).not.toBeInTheDocument();
+  });
+
+  it("returns to the previous cursor when the browser Back button is used", async () => {
+    server.use(
+      http.get("/api/products", ({ request }) => {
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        if (!cursor) {
+          return HttpResponse.json({
+            data: [makeProduct({ name: "Item A" })],
+            pagination: { limit: 20, next_cursor: "idx:1" },
+          });
+        }
+        return HttpResponse.json({
+          data: [makeProduct({ name: "Item B" })],
+          pagination: { limit: 20, next_cursor: null },
+        });
+      }),
+    );
+
+    renderWithBackButton("/store");
+
+    await screen.findByText("Item A");
+    await userEvent.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByText("Item B");
+
+    await userEvent.click(screen.getByRole("button", { name: "Simulate browser back" }));
+
+    expect(await screen.findByText("Item A")).toBeInTheDocument();
+  });
+
+  it("loads the requested page from a ?cursor= deep link and falls back to the first page on Prev", async () => {
+    let requestedCursor: string | null | undefined;
+    server.use(
+      http.get("/api/products", ({ request }) => {
+        requestedCursor = new URL(request.url).searchParams.get("cursor");
+        if (requestedCursor === "abc123") {
+          return HttpResponse.json({
+            data: [makeProduct({ name: "Deep link item" })],
+            pagination: { limit: 20, next_cursor: null },
+          });
+        }
+        return HttpResponse.json({
+          data: [makeProduct({ name: "First page item" })],
+          pagination: { limit: 20, next_cursor: "abc123" },
+        });
+      }),
+    );
+
+    renderWithProviders(<App />, { route: "/store?cursor=abc123" });
+
+    expect(await screen.findByText("Deep link item")).toBeInTheDocument();
+    expect(requestedCursor).toBe("abc123");
+    expect(screen.getByRole("button", { name: "Previous" })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Previous" }));
+
+    expect(await screen.findByText("First page item")).toBeInTheDocument();
+    expect(requestedCursor).toBeNull();
+  });
+
+  it("recovers to the first page when the api rejects the cursor as invalid", async () => {
+    server.use(
+      http.get("/api/products", ({ request }) => {
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        if (cursor === "stale") {
+          return HttpResponse.json(
+            {
+              error: {
+                code: "validation_error",
+                message: "invalid cursor",
+                details: { cursor: "invalid_cursor" },
+              },
+            },
+            { status: 422 },
+          );
+        }
+        return HttpResponse.json({
+          data: [makeProduct({ name: "First page item" })],
+          pagination: { limit: 20, next_cursor: null },
+        });
+      }),
+    );
+
+    renderWithProviders(<App />, { route: "/store?cursor=stale" });
+
+    expect(await screen.findByText("First page item")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
 
@@ -200,21 +441,26 @@ describe("StoreSearchPage — filters and sorting (SPEC-006)", () => {
     });
   });
 
-  it("keeps every active param across pagination and resets page on a filter change", async () => {
-    let lastPage = 0;
+  it("keeps every active param across pagination and resets the cursor on a filter change", async () => {
+    let lastCursor: string | null = null;
     server.use(
       http.get("/api/products", ({ request }) => {
         const url = new URL(request.url);
         const q = url.searchParams.get("q");
         const category = url.searchParams.get("category");
         const priceMin = url.searchParams.get("price_min");
-        const page = Number(url.searchParams.get("page") ?? "1");
-        lastPage = page;
+        lastCursor = url.searchParams.get("cursor");
         expect(q).toBe("boot");
         expect(priceMin).toBe("10");
+        if (!lastCursor) {
+          return HttpResponse.json({
+            data: [makeProduct({ name: "match page 1", category: category ?? "Shoes" })],
+            pagination: { limit: 20, next_cursor: "idx:1" },
+          });
+        }
         return HttpResponse.json({
-          data: [makeProduct({ name: `match page ${page}`, category: category ?? "Shoes" })],
-          pagination: { page, page_size: 20, total: 40 },
+          data: [makeProduct({ name: "match page 2", category: category ?? "Shoes" })],
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );
@@ -227,10 +473,10 @@ describe("StoreSearchPage — filters and sorting (SPEC-006)", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(await screen.findByText("match page 2")).toBeInTheDocument();
-    expect(lastPage).toBe(2);
+    expect(lastCursor).toBe("idx:1");
 
     await userEvent.selectOptions(screen.getByLabelText("Sort by"), "price_asc");
-    await waitFor(() => expect(lastPage).toBe(1));
+    await waitFor(() => expect(lastCursor).toBeNull());
   });
 
   it("pre-fills every control and carries all params on the first request when opened via URL", async () => {
@@ -240,7 +486,7 @@ describe("StoreSearchPage — filters and sorting (SPEC-006)", () => {
         requestSearch = new URL(request.url).search;
         return HttpResponse.json({
           data: [makeProduct({ name: "Widget" })],
-          pagination: { page: 1, page_size: 20, total: 1 },
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );
@@ -284,7 +530,7 @@ describe("StoreSearchPage — filters and sorting (SPEC-006)", () => {
         requestCount += 1;
         return HttpResponse.json({
           data: [makeProduct()],
-          pagination: { page: 1, page_size: 20, total: 1 },
+          pagination: { limit: 20, next_cursor: null },
         });
       }),
     );

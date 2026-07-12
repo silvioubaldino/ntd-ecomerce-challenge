@@ -19,15 +19,17 @@ import {
 } from "../../components/ui/icons";
 import type { Product } from "../../api/types";
 import { useDeleteProduct, useProducts } from "./hooks";
+import { useCursorStack } from "./useCursorStack";
 
 const headerCell =
   "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 first:pl-6 last:pr-6";
 const bodyCell = "px-4 py-3.5 first:pl-6 last:pr-6";
 
 export function ProductListPage() {
-  const [page, setPage] = useState(1);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
+  const cursorStack = useCursorStack(cursor, setCursor);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
-  const productsQuery = useProducts(page);
+  const productsQuery = useProducts(cursor);
   const deleteProduct = useDeleteProduct();
 
   function confirmDelete() {
@@ -50,9 +52,6 @@ export function ProductListPage() {
   }
 
   const result = productsQuery.data;
-  const totalPages = result
-    ? Math.max(1, Math.ceil(result.pagination.total / result.pagination.page_size))
-    : 1;
 
   return (
     <div className="flex flex-col gap-6">
@@ -176,31 +175,27 @@ export function ProductListPage() {
             </tbody>
           </table>
 
-          <div className="flex items-center justify-between gap-3 border-t border-slate-900/5 bg-slate-50/60 px-6 py-3.5 text-sm text-slate-600">
-            <span>
-              Page {result.pagination.page} of {totalPages} ({result.pagination.total}{" "}
-              total)
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-              >
-                <ChevronLeftIcon className="h-4 w-4" />
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next
-                <ChevronRightIcon className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="flex items-center justify-end gap-2 border-t border-slate-900/5 bg-slate-50/60 px-6 py-3.5 text-sm text-slate-600">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!cursorStack.canGoPrev}
+              onClick={() => cursorStack.goPrev()}
+            >
+              <ChevronLeftIcon className="h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!result.pagination.next_cursor}
+              onClick={() =>
+                result.pagination.next_cursor && cursorStack.goNext(result.pagination.next_cursor)
+              }
+            >
+              Next
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
           </div>
         </Card>
       )}

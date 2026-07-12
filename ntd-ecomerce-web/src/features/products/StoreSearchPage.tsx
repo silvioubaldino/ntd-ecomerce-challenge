@@ -13,10 +13,11 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from "../../components/ui/icons";
-import type { Product, ProductSort } from "../../api/types";
+import { ApiError, type Product, type ProductSort } from "../../api/types";
 import { cartErrorMessage } from "../cart/cartMessages";
 import { useAddToCart } from "../cart/hooks";
 import { useCategories, useProductSearch } from "./hooks";
+import { useCursorStack } from "./useCursorStack";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -39,7 +40,7 @@ function parsePrice(value: string): number | null {
 export function StoreSearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q") ?? "";
-  const page = Number(searchParams.get("page") ?? "1") || 1;
+  const cursor = searchParams.get("cursor") ?? undefined;
   const category = searchParams.get("category") ?? "";
   const priceMinParam = searchParams.get("price_min") ?? "";
   const priceMaxParam = searchParams.get("price_max") ?? "";
@@ -99,6 +100,18 @@ export function StoreSearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceMinInput, priceMaxInput, priceRangeInvalid]);
 
+  function setCursor(nextCursor: string | undefined) {
+    const next = new URLSearchParams(searchParams);
+    if (nextCursor) {
+      next.set("cursor", nextCursor);
+    } else {
+      next.delete("cursor");
+    }
+    setSearchParams(next);
+  }
+
+  const cursorStack = useCursorStack(cursor, setCursor);
+
   function applyFilters(updates: Record<string, string | undefined>) {
     const next = new URLSearchParams(searchParams);
     for (const [key, value] of Object.entries(updates)) {
@@ -109,7 +122,8 @@ export function StoreSearchPage() {
         next.delete(key);
       }
     }
-    next.delete("page");
+    next.delete("cursor");
+    cursorStack.reset();
     setSearchParams(next);
   }
 
@@ -124,13 +138,8 @@ export function StoreSearchPage() {
     next.delete("price_min");
     next.delete("price_max");
     next.delete("sort");
-    next.delete("page");
-    setSearchParams(next);
-  }
-
-  function goToPage(nextPage: number) {
-    const next = new URLSearchParams(searchParams);
-    next.set("page", String(nextPage));
+    next.delete("cursor");
+    cursorStack.reset();
     setSearchParams(next);
   }
 
@@ -147,7 +156,7 @@ export function StoreSearchPage() {
 
   const searchQuery = useProductSearch({
     q,
-    page,
+    cursor,
     category,
     priceMin: priceMinParam,
     priceMax: priceMaxParam,
@@ -155,7 +164,20 @@ export function StoreSearchPage() {
     enabled: !urlPriceRangeInvalid,
   });
 
-  if (searchQuery.isError) {
+  const invalidCursorError =
+    searchQuery.error instanceof ApiError &&
+    searchQuery.error.code === "validation_error" &&
+    Boolean(searchQuery.error.details?.cursor);
+
+  useEffect(() => {
+    if (invalidCursorError && cursor) {
+      cursorStack.reset();
+      setCursor(undefined);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [invalidCursorError, cursor]);
+
+  if (searchQuery.isError && !invalidCursorError) {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader title="Store" description="Search the product catalog." />
@@ -187,9 +209,6 @@ export function StoreSearchPage() {
   }
 
   const result = searchQuery.data;
-  const totalPages = result
-    ? Math.max(1, Math.ceil(result.pagination.total / result.pagination.page_size))
-    : 1;
 
   return (
     <div className="flex flex-col gap-6">
@@ -253,31 +272,27 @@ export function StoreSearchPage() {
             ))}
           </ul>
 
-          <div className="flex items-center justify-between gap-3 border-t border-slate-900/5 bg-slate-50/60 px-6 py-3.5 text-sm text-slate-600">
-            <span>
-              Page {result.pagination.page} of {totalPages} ({result.pagination.total}{" "}
-              total)
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => goToPage(page - 1)}
-              >
-                <ChevronLeftIcon className="h-4 w-4" />
-                Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => goToPage(page + 1)}
-              >
-                Next
-                <ChevronRightIcon className="h-4 w-4" />
-              </Button>
-            </div>
+          <div className="flex items-center justify-end gap-2 border-t border-slate-900/5 bg-slate-50/60 px-6 py-3.5 text-sm text-slate-600">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!cursorStack.canGoPrev}
+              onClick={() => cursorStack.goPrev()}
+            >
+              <ChevronLeftIcon className="h-4 w-4" />
+              Previous
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!result.pagination.next_cursor}
+              onClick={() =>
+                result.pagination.next_cursor && cursorStack.goNext(result.pagination.next_cursor)
+              }
+            >
+              Next
+              <ChevronRightIcon className="h-4 w-4" />
+            </Button>
           </div>
         </Card>
       )}

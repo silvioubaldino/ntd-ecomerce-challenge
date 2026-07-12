@@ -166,17 +166,32 @@ function filterAndSortProducts(url: URL): Product[] {
 export const handlers = [
   http.get("/api/products", ({ request }) => {
     const url = new URL(request.url);
-    const page = Number(url.searchParams.get("page") ?? "1");
-    const pageSize = Number(url.searchParams.get("page_size") ?? "20");
+    const limit = Number(url.searchParams.get("limit") ?? "20");
+    const cursor = url.searchParams.get("cursor");
+
+    if (cursor === "invalid") {
+      return HttpResponse.json(
+        {
+          error: {
+            code: "validation_error",
+            message: "invalid cursor",
+            details: { cursor: "invalid_cursor" },
+          },
+        },
+        { status: 422 },
+      );
+    }
+
+    const offset = cursor ? Number(cursor.replace("cursor:", "")) || 0 : 0;
 
     const items = filterAndSortProducts(url);
-    const total = items.length;
-    const start = (page - 1) * pageSize;
-    const pageItems = items.slice(start, start + pageSize);
+    const pageItems = items.slice(offset, offset + limit);
+    const nextOffset = offset + limit;
+    const nextCursor = nextOffset < items.length ? `cursor:${nextOffset}` : null;
 
     return HttpResponse.json({
       data: pageItems,
-      pagination: { page, page_size: pageSize, total },
+      pagination: { limit, next_cursor: nextCursor },
     });
   }),
 
