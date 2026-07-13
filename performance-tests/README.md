@@ -1,4 +1,4 @@
-# Performance testing — before/after the 4 changes
+# Performance testing — before/after the 3 changes
 
 Executable guide to prove (with numbers + query plan) the effect of each of the latest
 performance changes, comparing the commit **before** with **after**.
@@ -21,22 +21,20 @@ performance-tests/
 ├── seed.sql                     # deterministic seed of products table
 ├── test-1-search-index-scan/
 ├── test-2-keyset-pagination/
-├── test-3-web-cursor-pagination/
-└── test-4-csv-import-batching/
+└── test-3-csv-import-batching/
 ```
 
 Each `test-N-*/` contains:
 - `INSTRUCTIONS.md` — step-by-step guide to run that scenario (before and after).
 - `RESULTS.md` — evidence and metrics collected when running (filled in as you run).
 
-## The 4 scenarios and what to prove
+## The 3 scenarios and what to prove
 
 | # | Scenario | Commit (after) | Before = parent | Change | Proof |
 |---|----------|-----------------|-------------|--------|-------|
 | 1 | [test-1-search-index-scan](test-1-search-index-scan/INSTRUCTIONS.md) | `c12df06` | `c12df06^` | Search index-backed (RNF-02) | plan becomes `Bitmap Index Scan` (drops `Seq Scan`) + p95 latency drops |
 | 2 | [test-2-keyset-pagination](test-2-keyset-pagination/INSTRUCTIONS.md) | `00c0c37` | `00c0c37^` | Pagination offset→keyset (RNF-02) | latency per page **stops growing with depth** |
-| 3 | [test-3-web-cursor-pagination](test-3-web-cursor-pagination/INSTRUCTIONS.md) | `ff36be8` | `ff36be8^` | Web consuming cursor | perceived load time (secondary, front-end) |
-| 4 | [test-4-csv-import-batching](test-4-csv-import-batching/INSTRUCTIONS.md) | `3fdb378` | `3fdb378^` | CSV import batched (RNF-03) | number of `INSERT`s ∝ number of batches, not rows + total time drops |
+| 3 | [test-3-csv-import-batching](test-3-csv-import-batching/INSTRUCTIONS.md) | `3fdb378` | `3fdb378^` | CSV import batched (RNF-03) | number of `INSERT`s ∝ number of batches, not rows + total time drops |
 
 Golden rule of comparison: **same dataset, same environment, only the commit changes.**
 
@@ -99,8 +97,8 @@ services:
       retries: 10
 ```
 
-For **scenario 4 (import)** we'll use a variant with statement logging (see
-`test-4-csv-import-batching/INSTRUCTIONS.md`).
+For **scenario 3 (import)** we'll use a variant with statement logging (see
+`test-3-csv-import-batching/INSTRUCTIONS.md`).
 
 Lifecycle helpers (database **always clean** between runs), in `lib.sh`:
 
@@ -208,7 +206,7 @@ performance-tests/bench_keyset.sh <url-base-without-cursor> <n-pages>
 ### `gen_csv.sh` (generates synthetic CSV for import test)
 
 ```bash
-performance-tests/gen_csv.sh 40000 > performance-tests/test-4-csv-import-batching/import_big.csv
+performance-tests/gen_csv.sh 40000 > performance-tests/test-3-csv-import-batching/import_big.csv
 ```
 
 ---

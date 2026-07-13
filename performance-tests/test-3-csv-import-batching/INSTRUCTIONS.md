@@ -1,4 +1,4 @@
-# Test 4 — CSV import batched (RNF-03)
+# Test 3 — CSV import batched (RNF-03)
 
 Prerequisites, environment, seed, and shared scripts: see [`../README.md`](../README.md).
 
@@ -12,8 +12,8 @@ Commits: after = `3fdb378`, before = `3fdb378^`.
 Endpoint limit = **5 MB**. Generate ~40k rows (stays under limit):
 
 ```bash
-performance-tests/gen_csv.sh 40000 > performance-tests/test-4-csv-import-batching/import_big.csv
-ls -lh performance-tests/test-4-csv-import-batching/import_big.csv   # confirm < 5 MB
+performance-tests/gen_csv.sh 40000 > performance-tests/test-3-csv-import-batching/import_big.csv
+ls -lh performance-tests/test-3-csv-import-batching/import_big.csv   # confirm < 5 MB
 ```
 
 ## Database with statement logging (to count INSERTs)
@@ -36,7 +36,7 @@ run_import() {                    # $1 = hash, $2 = label
   echo "=== $2 ==="
   # total import time
   curl -s -o /tmp/report_$2.json -w 'import time: %{time_total}s\n' \
-    -F "file=@performance-tests/test-4-csv-import-batching/import_big.csv" \
+    -F "file=@performance-tests/test-3-csv-import-batching/import_big.csv" \
     http://localhost:8080/products/import
   jq '.summary' /tmp/report_$2.json
   # number of INSERTs fired to the database
