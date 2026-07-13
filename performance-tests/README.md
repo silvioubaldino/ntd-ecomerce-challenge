@@ -1,79 +1,79 @@
-# Performance testing — antes/depois das 4 mudanças
+# Performance testing — before/after the 4 changes
 
-Guia executável para comprovar (com número + plano de query) o efeito de cada uma das
-últimas mudanças de performance, comparando o commit **antes** com o **depois**.
+Executable guide to prove (with numbers + query plan) the effect of each of the latest
+performance changes, comparing the commit **before** with **after**.
 
-Não é doc spec-driven — é um roteiro solto pra rodar localmente. Esta pasta reúne as
-**funções e scripts genéricos** (usados por mais de um teste) na raiz, e um
-**subdiretório por cenário** com as instruções passo a passo e os resultados daquele
-cenário especificamente.
+Not spec-driven documentation — a loose roadmap to run locally. This folder groups
+**shared functions and scripts** (used by multiple tests) at the root, and a
+**subdirectory per scenario** with step-by-step instructions and results specific to
+that scenario.
 
-## Estrutura
+## Structure
 
 ```
 performance-tests/
-├── README.md                    # este arquivo: pré-requisitos, ambiente, seed, scripts, armadilhas
-├── lib.sh                       # funções: db_fresh, db_down, api_up, api_down, seed_db
-├── bench_http.sh                # latência com percentis (k6 ou fallback curl)
-├── bench_keyset.sh              # caminha o cursor de paginação e cronometra cada hop
-├── gen_csv.sh                   # gera CSV sintético pro teste de import
-├── docker-compose.perf.yml      # Postgres com recursos constrangidos (cpu/mem/buffers)
-├── seed.sql                     # seed determinístico da tabela products
+├── README.md                    # this file: prerequisites, environment, seed, scripts, pitfalls
+├── lib.sh                       # functions: db_fresh, db_down, api_up, api_down, seed_db
+├── bench_http.sh                # latency with percentiles (k6 or fallback curl)
+├── bench_keyset.sh              # walks pagination cursor and times each hop
+├── gen_csv.sh                   # generates synthetic CSV for import test
+├── docker-compose.perf.yml      # Postgres with constrained resources (cpu/mem/buffers)
+├── seed.sql                     # deterministic seed of products table
 ├── test-1-search-index-scan/
 ├── test-2-keyset-pagination/
 ├── test-3-web-cursor-pagination/
 └── test-4-csv-import-batching/
 ```
 
-Cada `test-N-*/` tem:
-- `INSTRUCTIONS.md` — passo a passo pra rodar aquele cenário (antes e depois).
-- `RESULTS.md` — indícios e métricas coletadas ao rodar (preenchido conforme roda).
+Each `test-N-*/` contains:
+- `INSTRUCTIONS.md` — step-by-step guide to run that scenario (before and after).
+- `RESULTS.md` — evidence and metrics collected when running (filled in as you run).
 
-## Os 4 cenários e o que provar
+## The 4 scenarios and what to prove
 
-| # | Cenário | Commit (depois) | Antes = pai | Mudança | Prova |
-|---|---------|-----------------|-------------|---------|-------|
-| 1 | [test-1-search-index-scan](test-1-search-index-scan/INSTRUCTIONS.md) | `c12df06` | `c12df06^` | Search index-backed (RNF-02) | plano vira `Bitmap Index Scan` (some o `Seq Scan`) + latência p95 cai |
-| 2 | [test-2-keyset-pagination](test-2-keyset-pagination/INSTRUCTIONS.md) | `00c0c37` | `00c0c37^` | Paginação offset→keyset (RNF-02) | latência por página **para de crescer com a profundidade** |
-| 3 | [test-3-web-cursor-pagination](test-3-web-cursor-pagination/INSTRUCTIONS.md) | `ff36be8` | `ff36be8^` | Web consumindo cursor | tempo de carga percebido (secundário, front) |
-| 4 | [test-4-csv-import-batching](test-4-csv-import-batching/INSTRUCTIONS.md) | `3fdb378` | `3fdb378^` | Import CSV batched (RNF-03) | nº de `INSERT` ∝ nº de batches, não de linhas + tempo total cai |
+| # | Scenario | Commit (after) | Before = parent | Change | Proof |
+|---|----------|-----------------|-------------|--------|-------|
+| 1 | [test-1-search-index-scan](test-1-search-index-scan/INSTRUCTIONS.md) | `c12df06` | `c12df06^` | Search index-backed (RNF-02) | plan becomes `Bitmap Index Scan` (drops `Seq Scan`) + p95 latency drops |
+| 2 | [test-2-keyset-pagination](test-2-keyset-pagination/INSTRUCTIONS.md) | `00c0c37` | `00c0c37^` | Pagination offset→keyset (RNF-02) | latency per page **stops growing with depth** |
+| 3 | [test-3-web-cursor-pagination](test-3-web-cursor-pagination/INSTRUCTIONS.md) | `ff36be8` | `ff36be8^` | Web consuming cursor | perceived load time (secondary, front-end) |
+| 4 | [test-4-csv-import-batching](test-4-csv-import-batching/INSTRUCTIONS.md) | `3fdb378` | `3fdb378^` | CSV import batched (RNF-03) | number of `INSERT`s ∝ number of batches, not rows + total time drops |
 
-Regra de ouro da comparação: **mesmo dataset, mesmo ambiente, só muda o commit.**
+Golden rule of comparison: **same dataset, same environment, only the commit changes.**
 
 ---
 
-## 0. Pré-requisitos
+## 0. Prerequisites
 
 ```bash
-# obrigatórios
+# required
 docker --version        # Docker + compose v2
-go version               # 1.25 (pra rodar a API do worktree)
-jq --version             # parse de JSON
+go version               # 1.25 (to run API from worktree)
+jq --version             # JSON parsing
 
-# opcional mas recomendado (latência com percentis)
-k6 version               # brew install k6   — se não tiver, há fallback em curl
+# optional but recommended (latency with percentiles)
+k6 version               # brew install k6   — if not present, fallback to curl
 ```
 
-**Rodar SQL (seed, EXPLAIN, VACUUM):** use sua extensão de banco no editor (SQLTools,
-DBeaver, etc.) conectada em `localhost:5432` / user `ntd` / senha `ntd` / db
-`ntd_ecomerce`. Cada `INSTRUCTIONS.md` indica onde entra na sequência — abra uma aba
-SQL, cole e rode.
+**Running SQL (seed, EXPLAIN, VACUUM):** use your database extension in the editor
+(SQLTools, DBeaver, etc.) connected to `localhost:5432` / user `ntd` / password `ntd` /
+db `ntd_ecomerce`. Each `INSTRUCTIONS.md` indicates where it fits in the sequence — open
+an SQL tab, paste, and run.
 
-Todos os comandos assumem que você está na raiz do monorepo:
+All commands assume you're at the monorepo root:
 
 ```bash
 export REPO=/Users/silvioubaldino/github/silvioubaldino/ntd/ntd-ecomerce-challenge
 cd "$REPO"
-chmod +x performance-tests/*.sh   # garante permissão de execução dos scripts
-source performance-tests/lib.sh   # carrega db_fresh, db_down, api_up, api_down, seed_db
+chmod +x performance-tests/*.sh   # ensure script execution permissions
+source performance-tests/lib.sh   # load db_fresh, db_down, api_up, api_down, seed_db
 ```
 
 ---
 
-## 1. Ambiente compartilhado (banco constrangido)
+## 1. Shared environment (constrained database)
 
-O gargalo só aparece com **recurso baixo + dataset grande**. `docker-compose.perf.yml`
-limita CPU/mem e reduz os buffers do Postgres pra ele não cachear a tabela inteira:
+The bottleneck only appears with **low resources + large dataset**. `docker-compose.perf.yml`
+limits CPU/mem and reduces Postgres buffers so it doesn't cache the entire table:
 
 ```yaml
 services:
@@ -99,45 +99,46 @@ services:
       retries: 10
 ```
 
-Para o **cenário 4 (import)** usaremos uma variação com log de statements (ver
+For **scenario 4 (import)** we'll use a variant with statement logging (see
 `test-4-csv-import-batching/INSTRUCTIONS.md`).
 
-Helpers de ciclo de vida (banco **sempre limpo** a cada rodada), em `lib.sh`:
+Lifecycle helpers (database **always clean** between runs), in `lib.sh`:
 
 ```bash
 export DSN="postgres://ntd:ntd@localhost:5432/ntd_ecomerce?sslmode=disable"
 export PGURL="postgresql://ntd:ntd@localhost:5432/ntd_ecomerce"
 
-db_fresh()   # sobe banco do zero (apaga volume)
+db_fresh()   # bring database up from scratch (deletes volume)
 db_down()    # docker compose down -v
 ```
 
 ---
 
-## 2. Rodar a API de um commit específico (git worktree)
+## 2. Running the API from a specific commit (git worktree)
 
-**Não use `git checkout`** — os scripts desta pasta sumiriam ao voltar no tempo. Use
-worktrees: cada commit vira uma pasta isolada, e a API aplica **as migrations daquele
-commit** no boot.
+**Do not use `git checkout`** — the scripts in this folder would disappear when going
+back in time. Use worktrees: each commit becomes an isolated folder, and the API applies
+**that commit's migrations** at boot.
 
 ```bash
-api_up <hash>   # sobe a API do worktree /tmp/perf-<hash>, espera health check
-api_down        # mata o processo da API
+api_up <hash>   # bring up API from worktree /tmp/perf-<hash>, wait for health check
+api_down        # kill the API process
 worktrees_clean # git worktree prune
 ```
 
-> A API roda `m.Up()` no boot, então subir a API de `/tmp/perf-<hash>` já cria o schema
-> correto **daquele** commit. Só suba a API **depois** do `db_fresh` e **antes** do seed.
+> The API runs `m.Up()` at boot, so bringing up the API from `/tmp/perf-<hash>` already
+> creates the correct schema **for that** commit. Only bring up the API **after**
+> `db_fresh` and **before** seeding.
 
 ---
 
-## 3. Seed determinístico (para os cenários 1, 2 e 3)
+## 3. Deterministic seed (for scenarios 1, 2, and 3)
 
-Semeie por **SQL direto**, não pela API: é ordens de magnitude mais rápido, independe da
-versão do código e é idêntico entre os dois commits (`setseed`). A coluna
-`search_vector` (quando existe) é gerada e popula sozinha.
+Seed via **direct SQL**, not the API: it's orders of magnitude faster, independent of
+code version, and identical across both commits (`setseed`). The `search_vector` column
+(when it exists) is generated and populates itself.
 
-`seed.sql` (SQL puro, sem sintaxe específica de `psql`, roda em qualquer client):
+`seed.sql` (pure SQL, no `psql`-specific syntax, runs in any client):
 
 ```sql
 SELECT setseed(0.42);
@@ -156,55 +157,55 @@ SELECT
   now()
 FROM generate_series(1, 500000) i;
 
--- rode esta linha SEPARADA da anterior:
+-- run this line SEPARATELY from the above:
 VACUUM ANALYZE products;
 ```
 
-**Opção A — SQLTools** (depois de `db_fresh` + `api_up`):
-1. Abra `seed.sql`.
-2. Selecione do `SELECT setseed(...)` até o `FROM generate_series(...) i;` (**sem**
-   incluir o `VACUUM ANALYZE`) e rode a seleção (`Cmd+E Cmd+E` ou botão direito → Run
-   Query).
-3. Selecione **só** a linha `VACUUM ANALYZE products;` e rode separado. `VACUUM` não
-   pode rodar dentro de transação, e o SQLTools costuma envolver o arquivo inteiro numa
-   transação — por isso as duas execuções são separadas.
-4. `VACUUM ANALYZE` não retorna linhas — painel de resultado vazio é o esperado, não
-   erro. Pra confirmar que rodou:
+**Option A — SQLTools** (after `db_fresh` + `api_up`):
+1. Open `seed.sql`.
+2. Select from `SELECT setseed(...)` to `FROM generate_series(...) i;` (**without**
+   including `VACUUM ANALYZE`) and run the selection (`Cmd+E Cmd+E` or right-click →
+   Run Query).
+3. Select **only** the `VACUUM ANALYZE products;` line and run separately. `VACUUM`
+   cannot run inside a transaction, and SQLTools usually wraps the entire file in a
+   transaction — that's why the two executions are separate.
+4. `VACUUM ANALYZE` returns no rows — empty result panel is expected, not an error. To
+   confirm it ran:
    ```sql
    SELECT count(*) FROM products;
    SELECT relname, last_vacuum, last_analyze FROM pg_stat_user_tables WHERE relname = 'products';
    ```
-5. Pra mudar a quantidade de linhas, edite o `500000` direto no arquivo antes de rodar.
+5. To change the number of rows, edit the `500000` directly in the file before running.
 
-**Opção B — terminal** (via `lib.sh`, ver seção 2):
+**Option B — terminal** (via `lib.sh`, see section 2):
 
 ```bash
-seed_db 500000        # ajusta o número e roda o INSERT + VACUUM ANALYZE
+seed_db 500000        # adjusts the number and runs INSERT + VACUUM ANALYZE
 ```
 
-> `VACUUM ANALYZE` é obrigatório nas duas opções: sem estatísticas atualizadas o planner
-> escolhe errado e você mede ruído. `n=500000` já dói; 1M dói mais — ajuste pra sua
-> máquina.
+> `VACUUM ANALYZE` is mandatory in both options: without updated statistics the planner
+> chooses wrong and you measure noise. `n=500000` already hurts; 1M hurts more — adjust
+> for your machine.
 
 ---
 
-## Scripts auxiliares
+## Helper scripts
 
-### `bench_http.sh` (latência com percentis)
+### `bench_http.sh` (latency with percentiles)
 
-Usa k6 se existir; senão cai num loop curl.
+Uses k6 if available; otherwise falls back to curl loop.
 
 ```bash
 performance-tests/bench_http.sh <url> <label>
 ```
 
-### `bench_keyset.sh` (caminha o cursor e cronometra cada hop)
+### `bench_keyset.sh` (walks cursor and times each hop)
 
 ```bash
-performance-tests/bench_keyset.sh <url-base-sem-cursor> <n-paginas>
+performance-tests/bench_keyset.sh <url-base-without-cursor> <n-pages>
 ```
 
-### `gen_csv.sh` (gera CSV sintético pro teste de import)
+### `gen_csv.sh` (generates synthetic CSV for import test)
 
 ```bash
 performance-tests/gen_csv.sh 40000 > performance-tests/test-4-csv-import-batching/import_big.csv
@@ -212,7 +213,7 @@ performance-tests/gen_csv.sh 40000 > performance-tests/test-4-csv-import-batchin
 
 ---
 
-## Limpeza
+## Cleanup
 
 ```bash
 db_down
@@ -220,11 +221,11 @@ git worktree remove /tmp/perf-* --force 2>/dev/null; git worktree prune
 docker rm -f perfdb 2>/dev/null || true
 ```
 
-## Armadilhas (leia antes de confiar num número)
+## Pitfalls (read before trusting a number)
 
-- **Sempre `db_fresh` entre rodadas** — volume persistente contamina a próxima versão.
-- **Sempre `VACUUM ANALYZE` após o seed** — sem estatísticas o planner erra e você mede ruído.
-- **Descarte o warmup** — a 1ª query é cold cache; rode N vezes e olhe p95, não o 1º valor.
-- **Migre a partir do worktree** — schemas divergem entre commits; a API do worktree cuida disso no boot.
-- **Pool de conexões** — mesmo `DATABASE_URL`/pool nos dois lados; senão você mede o pool, não a query.
-- **Import > 5 MB é rejeitado** (`file_too_large`) — mantenha o CSV sob o limite.
+- **Always `db_fresh` between runs** — persistent volume contaminates the next version.
+- **Always `VACUUM ANALYZE` after seeding** — without updated stats the planner errs and you measure noise.
+- **Discard warmup** — first query is cold cache; run N times and look at p95, not the first value.
+- **Migrate from the worktree** — schemas diverge between commits; worktree API handles it at boot.
+- **Connection pool** — same `DATABASE_URL`/pool on both sides; otherwise you measure the pool, not the query.
+- **Import > 5 MB is rejected** (`file_too_large`) — keep CSV under the limit.

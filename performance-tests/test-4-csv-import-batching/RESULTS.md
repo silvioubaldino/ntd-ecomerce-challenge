@@ -1,16 +1,16 @@
-# Resultados — Teste 4: Import CSV batched (RNF-03)
+# Results — Test 4: CSV import batched (RNF-03)
 
-Passo a passo: [`INSTRUCTIONS.md`](INSTRUCTIONS.md). Ainda não rodado — preencher ao
-executar o teste.
+Step by step: [`INSTRUCTIONS.md`](INSTRUCTIONS.md). Not yet run — fill in when executing
+the test.
 
-## Tabela resumo
+## Summary table
 
-| Métrica | Antes (`3fdb378^`) | Depois (`3fdb378`) | Ganho |
-|---------|----------------------|-----------------------|-------|
-| Nº de `INSERT` statements | ~40000 (esperado) | ~80 (esperado) | |
-| Tempo total do import | | | |
+| Metric | Before (`3fdb378^`) | After (`3fdb378`) | Gain |
+|--------|----------------------|-----------------------|-------|
+| Number of `INSERT` statements | ~40,000 (expected) | ~80 (expected) | |
+| Total import time | | | |
 
-## Evidência bruta
+## Raw evidence
 
-_(colar aqui a saída de `run_import` de cada fase: `jq '.summary'`, contagem de
-INSERTs no log e `import time`)_
+_(paste output from `run_import` from each phase: `jq '.summary'`, INSERT count from log,
+and `import time`)_

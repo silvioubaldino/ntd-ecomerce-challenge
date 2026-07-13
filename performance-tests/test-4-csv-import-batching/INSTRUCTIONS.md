@@ -1,25 +1,25 @@
-# Teste 4 — Import CSV batched (RNF-03)
+# Test 4 — CSV import batched (RNF-03)
 
-Pré-requisitos, ambiente, seed e scripts genéricos: ver [`../README.md`](../README.md).
+Prerequisites, environment, seed, and shared scripts: see [`../README.md`](../README.md).
 
-**Hipótese:** antes = 1 `INSERT` por linha; depois = 1 `INSERT` a cada 500 linhas
-(`ImportBatchSize`). **Mesmo schema nos dois** — só muda o código.
+**Hypothesis:** before = 1 `INSERT` per row; after = 1 `INSERT` per 500 rows
+(`ImportBatchSize`). **Same schema in both** — only code changes.
 
-Commits: depois = `3fdb378`, antes = `3fdb378^`.
+Commits: after = `3fdb378`, before = `3fdb378^`.
 
-## Preparar o CSV (uma vez, reusado nas duas versões)
+## Prepare CSV (once, reused in both versions)
 
-Limite do endpoint = **5 MB**. Gere ~40k linhas (fica sob o limite):
+Endpoint limit = **5 MB**. Generate ~40k rows (stays under limit):
 
 ```bash
 performance-tests/gen_csv.sh 40000 > performance-tests/test-4-csv-import-batching/import_big.csv
-ls -lh performance-tests/test-4-csv-import-batching/import_big.csv   # confirme < 5 MB
+ls -lh performance-tests/test-4-csv-import-batching/import_big.csv   # confirm < 5 MB
 ```
 
-## Banco com log de statements (pra contar os INSERTs)
+## Database with statement logging (to count INSERTs)
 
-Suba o db com `-c log_statement=all` (adicione essa flag ao `command:` de
-`../docker-compose.perf.yml`, ou rode direto):
+Bring up db with `-c log_statement=all` (add this flag to `command:` in
+`../docker-compose.perf.yml`, or run directly):
 
 ```bash
 docker compose -f performance-tests/docker-compose.perf.yml down -v
@@ -28,38 +28,38 @@ docker compose -f performance-tests/docker-compose.perf.yml run -d --name perfdb
 until docker exec perfdb pg_isready -U ntd >/dev/null 2>&1; do sleep 1; done
 ```
 
-## Rodar antes e depois
+## Run before and after
 
 ```bash
 run_import() {                    # $1 = hash, $2 = label
   api_up "$1"
   echo "=== $2 ==="
-  # tempo total do import
+  # total import time
   curl -s -o /tmp/report_$2.json -w 'import time: %{time_total}s\n' \
     -F "file=@performance-tests/test-4-csv-import-batching/import_big.csv" \
     http://localhost:8080/products/import
   jq '.summary' /tmp/report_$2.json
-  # nº de INSERTs disparados no banco
+  # number of INSERTs fired to the database
   echo -n "INSERT statements: "
   docker logs perfdb 2>&1 | grep -c 'INSERT INTO "products"'
   api_down
 }
 
-# limpa produtos entre as rodadas (mesmo schema, então dá pra reusar o db)
-# TRUNCATE products; -- rode pelo SQLTools
+# clean products between runs (same schema, so you can reuse the db)
+# TRUNCATE products; -- run via SQLTools
 
-run_import 3fdb378^ antes-import   # espere ~40000 INSERTs
-# TRUNCATE products;   -- de novo, antes da rodada seguinte
-run_import 3fdb378  depois-import   # espere ~80 INSERTs (40000/500)
+run_import 3fdb378^ before-import   # expect ~40000 INSERTs
+# TRUNCATE products;   -- again, before next run
+run_import 3fdb378  after-import    # expect ~80 INSERTs (40000/500)
 ```
 
 ## Compare
 
-`INSERT statements` (≈40000 vs ≈80) e `import time` (cai muito, ainda mais com a
-rede/round-trips do banco constrangido).
+`INSERT statements` (≈40000 vs ≈80) and `import time` (drops significantly, especially
+with constrained database network/round-trips).
 
-> Dica: se o `grep -c` no log ficar impreciso por causa de logs antigos, derrube e suba
-> o `perfdb` limpo entre as duas rodadas, ou zere o container de log. O número que
-> importa é a **ordem de grandeza** (milhares vs dezenas).
+> Tip: if `grep -c` on the log becomes imprecise due to old logs, tear down and bring
+> up clean `perfdb` between runs, or clear the container log. The number that matters
+> is the **order of magnitude** (thousands vs tens).
 
-Resultados coletados: [`RESULTS.md`](RESULTS.md).
+Collected results: [`RESULTS.md`](RESULTS.md).

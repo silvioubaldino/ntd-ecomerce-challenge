@@ -19,3 +19,6 @@ pgdata/
 # Logs & OS
 *.log
 .DS_Store
+
+# IDEs
+.vscode

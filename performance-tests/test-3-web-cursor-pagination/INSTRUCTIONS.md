@@ -1,27 +1,27 @@
-# Teste 3 — Web consumindo cursor (secundário, front)
+# Test 3 — Web consuming cursor (secondary, front-end)
 
-Pré-requisitos, ambiente, seed e scripts genéricos: ver [`../README.md`](../README.md).
+Prerequisites, environment, seed, and shared scripts: see [`../README.md`](../README.md).
 
-A prova de banco já está no [teste 2](../test-2-keyset-pagination/); o que muda aqui é a
-UX. Comparação leve, manual, via browser.
+The database proof is already in [test 2](../test-2-keyset-pagination/); what changes
+here is the UX. Light, manual comparison via browser.
 
-Commits: depois = `ff36be8`, antes = `ff36be8^`.
+Commits: after = `ff36be8`, before = `ff36be8^`.
 
-## Passo a passo
+## Step by step
 
-Suba o stack completo em cada commit e cronometre o carregamento do catálogo profundo
-(rolar/paginar até o fundo). Métrica: tempo até a última página / requests disparados.
+Bring up the full stack on each commit and time loading the deep catalog (scroll/paginate
+to the bottom). Metric: time to last page / requests fired.
 
 ```bash
-git worktree add -f /tmp/perf-ff28 ff36be8^   # antes
-git worktree add -f /tmp/perf-ff36 ff36be8    # depois
+git worktree add -f /tmp/perf-ff28 ff36be8^   # before
+git worktree add -f /tmp/perf-ff36 ff36be8    # after
 ```
 
-Em cada worktree: `docker compose up --build web api db`, abrir o catálogo no browser,
-DevTools → Network: comparar nº de requests e tempo até o fim da lista.
+On each worktree: `docker compose up --build web api db`, open catalog in browser,
+DevTools → Network: compare number of requests and time to end of list.
 
-Se quiser objetivo: no "antes" (offset) o front busca `?page=N` (cada página mais
-lenta); no "depois" (cursor) usa `next_cursor` (cada página constante). Meça pelo
-Network do DevTools ou por um Lighthouse antes/depois.
+For a clear measurement: before (offset) front-end fetches `?page=N` (each page slower);
+after (cursor) uses `next_cursor` (each page constant). Measure via DevTools Network or
+Lighthouse before/after.
 
-Resultados coletados: [`RESULTS.md`](RESULTS.md).
+Collected results: [`RESULTS.md`](RESULTS.md).

@@ -1,35 +1,35 @@
-# Resultados — Teste 1: Search index-backed (RNF-02)
+# Results — Test 1: Search index-backed (RNF-02)
 
-Passo a passo: [`INSTRUCTIONS.md`](INSTRUCTIONS.md). Rodado em 500k produtos, termo de
-busca seletivo `424242` (bate em **1 único produto**, `Product 424242`), k6 com 2 VUs.
+Step by step: [`INSTRUCTIONS.md`](INSTRUCTIONS.md). Run on 500k products, selective
+search term `424242` (hits **1 single product**, `Product 424242`), k6 with 2 VUs.
 
-## Tabela resumo
+## Summary table
 
-| Métrica | Antes (`c12df06^`) | Depois (`c12df06`) | Ganho |
-|---------|---------------------|----------------------|-------|
-| Nó do plano | `Parallel Seq Scan` (2 workers) | `Bitmap Index Scan` → `Bitmap Heap Scan` | some o full-table scan |
-| Linhas varridas | ~500.000 (166.665 descartadas × 3 loops) | 1 (via índice) | ~500.000x menos linhas tocadas |
-| Buffers (EXPLAIN) | 4900 hit + 5378 read = 10.278 | 6 hit + 2 read = 8 | **~1.285x menos blocos lidos** |
-| EXPLAIN execution time | 1.159,976 ms | 0,276 ms | **~4.203x mais rápido** |
-| k6 `http_req_duration` avg | 4,90 s | 5,07 ms | **~967x mais rápido** |
-| k6 p95 | 5,68 s | 7,4 ms | **~768x mais rápido** |
-| k6 throughput | 0,39 req/s (13 reqs/30s) | 387,2 req/s (11.618 reqs/30s) | **~980x mais requisições atendidas** |
-| Erros HTTP | 0% (0/13) | 0% (0/11.618) | — |
+| Metric | Before (`c12df06^`) | After (`c12df06`) | Gain |
+|--------|---------------------|----------------------|-------|
+| Plan node | `Parallel Seq Scan` (2 workers) | `Bitmap Index Scan` → `Bitmap Heap Scan` | eliminates full-table scan |
+| Rows scanned | ~500,000 (166,665 filtered × 3 loops) | 1 (via index) | ~500,000x fewer rows touched |
+| Buffers (EXPLAIN) | 4900 hit + 5378 read = 10,278 | 6 hit + 2 read = 8 | **~1,285x fewer blocks read** |
+| EXPLAIN execution time | 1,159.976 ms | 0.276 ms | **~4,203x faster** |
+| k6 `http_req_duration` avg | 4.90 s | 5.07 ms | **~967x faster** |
+| k6 p95 | 5.68 s | 7.4 ms | **~768x faster** |
+| k6 throughput | 0.39 req/s (13 reqs/30s) | 387.2 req/s (11,618 reqs/30s) | **~980x more requests handled** |
+| HTTP errors | 0% (0/13) | 0% (0/11,618) | — |
 
-**Conclusão:** com termo seletivo e sem fila de contenção (2 VUs), o índice GIN
-(`idx_products_search_vector`) elimina o `Seq Scan` e derruba a latência de
-segundos para milissegundos — prova direta do RNF-02 tanto no plano de query
-(`Bitmap Index Scan` substitui `Parallel Seq Scan`) quanto na latência ponta a ponta.
+**Conclusion:** with selective term and no contention queueing (2 VUs), the GIN index
+(`idx_products_search_vector`) eliminates the `Seq Scan` and drops latency from seconds
+to milliseconds — direct proof of RNF-02 both in query plan (`Bitmap Index Scan`
+replaces `Parallel Seq Scan`) and end-to-end latency.
 
-## Notas
+## Notes
 
-- `max` do k6 no "depois" (122,65 ms) é bem acima do p95 (7,4 ms) — provável cold
-  start/warmup da 1ª requisição; descartável, consistente com a armadilha "descarte o
-  warmup" do `README.md`.
+- k6 `max` on "after" (122.65 ms) is well above p95 (7.4 ms) — likely cold
+  start/warmup of first request; discardable, consistent with "discard warmup" pitfall
+  in `README.md`.
 
-## Evidência bruta
+## Raw evidence
 
-### Fase ANTES — EXPLAIN
+### Before phase — EXPLAIN
 
 ```
 Limit  (cost=14330.14..14332.47 rows=20 width=130) (actual time=1156.308..1159.814 rows=4 loops=1)
@@ -54,7 +54,7 @@ Planning Time: 2.069 ms
 Execution Time: 1159.976 ms
 ```
 
-### Fase ANTES — HTTP (k6, 2 VUs)
+### Before phase — HTTP (k6, 2 VUs)
 
 ```
 http_req_duration..............: avg=4.9s min=3s med=4.99s max=5.8s p(90)=5.59s p(95)=5.68s
@@ -71,7 +71,7 @@ data_received..................: 19 kB  580 B/s
 data_sent......................: 1.2 kB 38 B/s
 ```
 
-### Fase DEPOIS — EXPLAIN
+### After phase — EXPLAIN
 
 ```
 Limit  (cost=6943.93..6943.98 rows=20 width=247) (actual time=0.119..0.120 rows=1 loops=1)
@@ -93,7 +93,7 @@ Planning Time: 5.420 ms
 Execution Time: 0.276 ms
 ```
 
-### Fase DEPOIS — HTTP (k6, 2 VUs)
+### After phase — HTTP (k6, 2 VUs)
 
 ```
 http_req_duration..............: avg=5.07ms min=3.22ms med=4.56ms max=122.65ms p(90)=6.39ms p(95)=7.4ms

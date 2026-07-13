@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# uso: performance-tests/bench_keyset.sh <url-base-sem-cursor> <n-paginas>
+# usage: performance-tests/bench_keyset.sh <url-base-without-cursor> <n-pages>
 base=$1; pages=${2:-500}; cursor=""
 for i in $(seq 1 "$pages"); do
   url="$base"; [ -n "$cursor" ] && url="$base&cursor=$cursor"
@@ -8,5 +8,5 @@ for i in $(seq 1 "$pages"); do
   body=$(echo "$resp" | sed '$d')
   cursor=$(echo "$body" | jq -r '.pagination.next_cursor // empty')
   [ $((i % 50)) -eq 0 ] && echo "hop $i -> ${t}s"
-  [ -z "$cursor" ] && { echo "fim na página $i"; break; }
+  [ -z "$cursor" ] && { echo "end at page $i"; break; }
 done

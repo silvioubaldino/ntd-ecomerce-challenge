@@ -1,11 +1,11 @@
--- SQL puro (roda em qualquer client: SQLTools, psql, DBeaver, etc).
--- Pra mudar a quantidade de linhas, troque o 500000 abaixo.
+-- Pure SQL (runs in any client: SQLTools, psql, DBeaver, etc).
+-- To change the number of rows, replace the 500000 below.
 --
--- IMPORTANTE: rode este bloco (INSERT) e o VACUUM ANALYZE no final
--- SEPARADAMENTE (duas execuções). VACUUM não pode rodar dentro de uma
--- transação, e várias extensões de SQL rodam o arquivo inteiro como uma
--- transação só — se rodar tudo de uma vez e der erro "VACUUM cannot run
--- inside a transaction block", selecione só o VACUUM e rode de novo.
+-- IMPORTANT: run this block (INSERT) and the VACUUM ANALYZE at the end
+-- SEPARATELY (two executions). VACUUM cannot run inside a transaction,
+-- and several SQL extensions run the entire file as a single transaction
+-- — if you run everything at once and get "VACUUM cannot run inside a
+-- transaction block", select just the VACUUM and run again.
 
 SELECT setseed(0.42);
 
@@ -23,5 +23,5 @@ SELECT
   now()
 FROM generate_series(1, 500000) i;
 
--- rode esta linha separada da anterior:
+-- run this line separately from the above:
 VACUUM ANALYZE products;
